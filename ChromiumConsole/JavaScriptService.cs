@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using CefSharp;
 using CefSharp.OffScreen;
@@ -13,15 +10,8 @@ namespace ChromiumConsole
 
         public static void ExecuteJS(string script, ChromiumWebBrowser browser)
         {
-            try
-            {
-                browser.GetMainFrame().ExecuteJavaScriptAsync(script);
 
-            }
-            catch (Exception)
-            {
-                Console.WriteLine("Error executing: " + script);
-            }
+            browser.GetMainFrame().ExecuteJavaScriptAsync(script);
             
         }
 
@@ -29,16 +19,8 @@ namespace ChromiumConsole
         {
             successFlag = true;
 
-            try
-            {
-                browser.GetMainFrame().ExecuteJavaScriptAsync(script);
-            }
-            catch (Exception)
-            {
-                Console.WriteLine("Error executing: " + script);
-                successFlag = false;
-            }
 
+            browser.GetMainFrame().ExecuteJavaScriptAsync(script);
         }
 
         public static string EvaluateJS(string script, ChromiumWebBrowser browser)

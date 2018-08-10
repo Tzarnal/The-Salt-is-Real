@@ -1,24 +1,30 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Threading;
 using CefSharp;
 using CefSharp.OffScreen;
-using CefSharp.Internals;
 using System.IO;
 using System.Globalization;
+using ChromiumConsole.EventArguments;
 
 namespace ChromiumConsole
 {
     public class SaltyConsole
     {
+        public enum Players
+        {
+            RedPlayer,
+            BluePlayer,
+            Unknown,
+        }
+
+        public event EventHandler LoginSuccess;
+        public event EventHandler MatchStart;
+        public event EventHandler MatchEnded;
+
         public static ChromiumWebBrowser frontPageBrowser;
         public static bool refreshLoopInitiated = false;
+
+        public static bool exit = false;
 
         private string _saltyAccount;
         private string _saltyPassword;
@@ -32,66 +38,64 @@ namespace ChromiumConsole
         {
             _saltyAccount = account;
             _saltyPassword = password;
-
-            Console.ForegroundColor = ConsoleColor.White;
-
-            //ChooseBettingRiskLevel();
-
+            
             InitializeServices();
+            
+            while (!exit)
+            {
+                Thread.Sleep(500);
+            }
 
-            Console.ReadKey();
 
-            MessageService.OnClosingBotMessage();
-
-            Console.ReadKey();
-
-            ShutDownServices();
+            ShutDownServices();            
         }
 
-        private static void ChooseBettingRiskLevel()
+        public void PlaceBet(Players player, int BetAmount)
         {
-            Console.WriteLine("Choose betting risk level:");
-            Console.WriteLine("1 = Very Safe, 2 = Safe, 3 = Moderate, 4 = Risky, 5 = Very Risky");
-
-            while (true)
+            if (BetAmount > PlayerInformation.SaltAmount)
             {
-                int result;
-
-                if (Int32.TryParse(Console.ReadLine(), out result))
-                {
-                    switch (result)
-                    {
-                        case 1:
-                            BetService.BetSettings.Risk_Level = BetSettings.RISK_LEVEL.VERY_SAFE;
-                            Console.WriteLine("Betting risk set to: Very Safe!");
-                            return;
-                        case 2:
-                            BetService.BetSettings.Risk_Level = BetSettings.RISK_LEVEL.SAFE;
-                            Console.WriteLine("Betting risk set to: Safe!");
-                            return;
-                        case 3:
-                            BetService.BetSettings.Risk_Level = BetSettings.RISK_LEVEL.MODERATE;
-                            Console.WriteLine("Betting risk set to: Moderate!");
-                            return;
-                        case 4:
-                            BetService.BetSettings.Risk_Level = BetSettings.RISK_LEVEL.RISKY;
-                            Console.WriteLine("Betting risk set to: Risky!");
-                            return;
-                        case 5:
-                            BetService.BetSettings.Risk_Level = BetSettings.RISK_LEVEL.VERY_RISKY;
-                            Console.WriteLine("Betting risk set to: Very Risky!");
-                            return;
-
-                        default:
-                            Console.WriteLine("You must enter an integer value from 1 to 5!");
-                            break;
-                    }
-                }
-                else
-                {
-                    Console.WriteLine("You must enter an integer value from 1 to 5!");
-                }
+                BetAmount = PlayerInformation.SaltAmount;
             }
+
+            var playerId = "player1";
+
+            if (player == Players.BluePlayer)
+            {
+                playerId = "player2";
+            }
+
+            bool successflag1, successflag2;
+
+            JavaScriptService.ExecuteJS($"document.getElementById(\"wager\").value = \"{BetAmount}\"", SaltyConsole.frontPageBrowser, out successflag1);
+            JavaScriptService.ExecuteJS($"document.getElementById(\"{playerId}\").click()", SaltyConsole.frontPageBrowser, out successflag2);
+
+            if (!successflag1 || !successflag2)
+            {
+                MatchInformation.HasPlacedBet = false;
+                return;
+            }
+
+            MatchInformation.SaltBettedOnMatch = BetAmount;
+            MatchInformation.SaltBeforeMatch = PlayerInformation.SaltAmount;
+            SessionStatistics.MatchesPlayed++;
+            MatchInformation.currentBettedPlayer = player == Players.RedPlayer ? MatchInformation.currentRedPlayer : MatchInformation.currentBluePlayer;
+            MatchInformation.HasPlacedBet = true;
+
+        }
+
+        protected virtual void OnMatchStart(EventArgs e)
+        {            
+            MatchStart?.Invoke(this, e);
+        }
+
+        protected virtual void OnMatchEnd(EventArgs e)
+        {
+            MatchEnded?.Invoke(this, e);
+        }
+
+        protected virtual void OnLoginSuccess(EventArgs e)
+        {
+            LoginSuccess?.Invoke(this, e);
         }
 
         private static void ShutDownServices()
@@ -120,10 +124,7 @@ namespace ChromiumConsole
             saltyStateMachine.StateClosed += SaltyStateMachine_StateClosed;
             saltyStateMachine.StateOpened += SaltyStateMachine_StateOpenend;
 
-
-            //RISK LEVEL
-            BetService.BetSettings.Risk_Level = BetSettings.RISK_LEVEL.RISKY;
-
+            
             loginService = new LoginService(_saltyAccount, _saltyPassword, frontPageBrowser);
 
             frontPageBrowser.LoadingStateChanged += Browser_LoadingStateChanged;
@@ -131,35 +132,79 @@ namespace ChromiumConsole
         }
 
         
-        private static void SaltyStateMachine_StateOpenend(object sender, EventArgs e)
+        private void SaltyStateMachine_StateOpenend(object sender, EventArgs e)
         {
+            var winningPlayer = Players.Unknown;
+            var matchEndEventArgs = new MatchEndEventArgs
+            {
+                Salt = DataExtractor.GetSaltBalanceNum(),
+                BluePlayer = MatchInformation.currentBluePlayer,
+                RedPlayer = MatchInformation.currentRedPlayer,
+
+                Tournament = false,
+                TournamentPlayersRemaining = 0,
+
+                WinningPlayer = winningPlayer,
+                SaltBalanceChange = MatchInformation.SaltBeforeMatch - DataExtractor.GetSaltBalanceNum(),
+            };
+
+
             //If last match was bet on
             if (MatchInformation.HasPlacedBet)
             {
-                MessageService.OnMatchEndedMessage();
                 MatchInformation.UpdateMatchEarnings();
-            }
 
-            Console.WriteLine($"\nCurrent salt is {PlayerInformation.SaltAmount.ToString("C0", CultureInfo.CreateSpecificCulture("en-US"))}");
+                var pickedPlayerWon = (MatchInformation.SaltBeforeMatch < PlayerInformation.SaltAmount);
+                var pickedPlayer = Players.RedPlayer;
+
+                if (MatchInformation.currentBettedPlayer == MatchInformation.currentBluePlayer)
+                {
+                    pickedPlayer = Players.BluePlayer;
+                }
+
+                if (pickedPlayerWon)
+                {
+                    matchEndEventArgs.WinningPlayer = pickedPlayer;
+                    matchEndEventArgs.WinningPlayerName = MatchInformation.currentBettedPlayer;
+                }
+                else
+                {
+                    if (pickedPlayer == Players.BluePlayer)
+                    {
+                        matchEndEventArgs.WinningPlayer = Players.RedPlayer;
+                        matchEndEventArgs.WinningPlayerName = MatchInformation.currentRedPlayer;
+                    }
+                    else
+                    {
+                        matchEndEventArgs.WinningPlayer = Players.BluePlayer;
+                        matchEndEventArgs.WinningPlayerName = MatchInformation.currentBluePlayer;
+                    }
+                }
+            }                        
+            
+            OnMatchEnd(matchEndEventArgs);
+            
             MatchInformation.statsBeenUpdated = false;
-            MatchInformation.HasPlacedBet = false;     
+            MatchInformation.HasPlacedBet = false;
+            MatchInformation.HasOfferedBet = false;
         }
 
-        private static void SaltyStateMachine_StateClosed(object sender, EventArgs e)
+        private void SaltyStateMachine_StateClosed(object sender, EventArgs e)
         {
             MatchInformation.statsBeenUpdated = true;
         }
 
-        private static void Browser_LoadingStateChanged(object sender, LoadingStateChangedEventArgs e)
+        private void Browser_LoadingStateChanged(object sender, LoadingStateChangedEventArgs e)
         {
             if (!e.IsLoading)
             {
                 if (!loginService.IsLoggedIn)
                 {
                     loginService.Login();
+                    OnLoginSuccess(new EventArgs());
                 }
                 if (loginService.IsLoggedIn)
-                {
+                {                    
                     if (!refreshLoopInitiated)
                     {
                         refreshThread.Start();
@@ -170,37 +215,32 @@ namespace ChromiumConsole
             
         }
 
-
-        private static void Refresh()
+        private void Refresh()
         {
-            try
-            {
-                saltyStateMachine.RefreshState();
-                MatchInformation.UpdateFighterData();
-            }
-            catch (Exception)
-            {
-                Console.WriteLine("Something went wrong!");
-            }
 
-            if (true)
-            {
-                
-                if (MatchInformation.IsBetStateOpen())
-                {
-                    MatchInformation.UpdateData();
-
-                    BetService.Bet(MatchInformation.p1WinRate > MatchInformation.p2WinRate ? "player1" : "player2", BetService.CalculateWager());
-                }
-            }
-            else
+            saltyStateMachine.RefreshState();
+            MatchInformation.UpdateFighterData();
+                            
+            if (!MatchInformation.HasOfferedBet)
             {
                 MatchInformation.UpdateData();
-            }
-            
+
+                var matchStartEventArgs = new MatchStartEventArgs
+                {
+                    Salt = DataExtractor.GetSaltBalanceNum(),
+                    BluePlayer = MatchInformation.currentBluePlayer,
+                    RedPlayer = MatchInformation.currentRedPlayer,
+
+                    Tournament = false,
+                    TournamentPlayersRemaining = 0,
+                };
+
+                OnMatchStart(matchStartEventArgs);
+                MatchInformation.HasOfferedBet = true;
+            }            
         }
 
-        private static void RefreshLoop()
+        private void RefreshLoop()
         {
             while (true)
             {

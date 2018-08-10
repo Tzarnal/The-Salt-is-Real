@@ -70,17 +70,16 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BetService.cs" />
     <Compile Include="DataExtractor.cs" />
+    <Compile Include="EventArguments\MatchEndEventArgs.cs" />
+    <Compile Include="EventArguments\MatchStartEventArgs.cs" />
     <Compile Include="JavaScriptService.cs" />
     <Compile Include="LoginService.cs" />
     <Compile Include="MatchInformation.cs" />
-    <Compile Include="MessageService.cs" />
     <Compile Include="PlayerInformation.cs" />
     <Compile Include="SaltyConsole.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SaltyState.cs" />
-    <Compile Include="ScreenShotService.cs" />
     <Compile Include="SessionStatistics.cs" />
   </ItemGroup>
   <ItemGroup>
