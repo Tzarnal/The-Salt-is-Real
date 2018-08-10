@@ -171,13 +171,24 @@ namespace RealSalt
             //Place and report bet.
             _saltyBetConsole.PlaceBet(betCharacter,betSalt);
 
+            var betCharacterName = "Unknown";
+            if (betCharacter == SaltyConsole.Players.BluePlayer)
+            {
+                betCharacterName = matchStartArgs.BluePlayer;
+            }
+            else
+            {
+                betCharacterName = matchStartArgs.RedPlayer;
+            }
+
+
             Log.Information("Match Started : {RedPlayer}({RedStats}) vs {BluePlayer}({BlueStats}). Betting {SaltAmount}$ on {BetPlayer}.",
                 matchStartArgs.RedPlayer,
                 redPlayer.ToString(),
                 matchStartArgs.BluePlayer,
                 bluePlayer.ToString(),
                 betSalt,
-                betCharacter);
+                betCharacterName);
         }
 
         private static void SaltyBetConsoleOnMatchEnded(object sender, EventArgs eventArgs)
