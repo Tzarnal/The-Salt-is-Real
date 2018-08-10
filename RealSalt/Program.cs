@@ -15,6 +15,7 @@ namespace RealSalt
         private static Configuration _saltyConfiguration;
         private static ForbiddingManse _forbiddingManse;
         private static SessionResults _sessionResults;
+        private static Random _genie;
 
         #region MyRegion
         // Declare the SetConsoleCtrlHandler function
@@ -54,7 +55,9 @@ namespace RealSalt
             _saltyBetConsole = new SaltyConsole();
             _forbiddingManse = new ForbiddingManse();
             _sessionResults = new SessionResults();
-            
+            _genie = new Random();
+
+
             Log.Information("Database contains {CharacterCount} Characters.",
                 +_forbiddingManse.Characters.Count());
 
@@ -110,12 +113,71 @@ namespace RealSalt
                 _sessionResults.StartingSalt = matchStartArgs.Salt;
             }
 
-            _saltyBetConsole.PlaceBet(SaltyConsole.Players.RedPlayer,10);
+            //Default Values            
+            var betSalt = 10;
+            var betCharacter = SaltyConsole.Players.RedPlayer;
 
-            Log.Information("Match Started : {RedPlayer} vs {BluePlayer}. Betting {SaltAmount}$ on {RedPlayer}.",
+
+            var bluePlayer = _forbiddingManse.GetOrCreateCharacter(matchStartArgs.BluePlayer);
+            var redPlayer = _forbiddingManse.GetOrCreateCharacter(matchStartArgs.RedPlayer);
+
+            if (redPlayer.IsReliableData && bluePlayer.IsReliableData)
+            {
+                //Ideal case, we have reliable information on both characters
+                if (redPlayer.WinPercent > bluePlayer.WinPercent)
+                {
+                    betCharacter = SaltyConsole.Players.RedPlayer;
+                    betSalt += redPlayer.AdditionalBetAmount(betSalt);
+                }
+                else
+                {
+                    betCharacter = SaltyConsole.Players.BluePlayer;
+                    betSalt += bluePlayer.AdditionalBetAmount(betSalt);
+                }
+            }
+            else if (redPlayer.IsReliableData)
+            {
+                if (redPlayer.WinPercent > 50)
+                {
+                    betCharacter = SaltyConsole.Players.RedPlayer;
+                    betSalt += redPlayer.AdditionalBetAmount(betSalt);
+                }
+                else
+                {
+                    betCharacter = SaltyConsole.Players.BluePlayer;
+                }
+            }
+            else if (bluePlayer.IsReliableData)
+            {
+                if (bluePlayer.WinPercent > 50)
+                {
+                    betCharacter = SaltyConsole.Players.BluePlayer;
+                    betSalt += bluePlayer.AdditionalBetAmount(betSalt);
+                }
+                else
+                {
+                    betCharacter = SaltyConsole.Players.RedPlayer;
+                }
+            }
+            else
+            {
+                //No clue what to do, just bet randomly.
+                if (isHeads())
+                {
+                    betCharacter = SaltyConsole.Players.BluePlayer;
+                }
+            }
+                        
+            //Place and report bet.
+            _saltyBetConsole.PlaceBet(betCharacter,betSalt);
+
+            Log.Information("Match Started : {RedPlayer}({RedStats}) vs {BluePlayer}({BlueStats}). Betting {SaltAmount}$ on {BetPlayer}.",
                 matchStartArgs.RedPlayer,
+                redPlayer.ToString(),
                 matchStartArgs.BluePlayer,
-                10);
+                bluePlayer.ToString(),
+                betSalt,
+                betCharacter);
         }
 
         private static void SaltyBetConsoleOnMatchEnded(object sender, EventArgs eventArgs)
@@ -154,6 +216,16 @@ namespace RealSalt
                 _sessionResults.Losses++;
             }
 
+        }
+
+        private static bool isHeads()
+        {
+            var result = _genie.Next(0, 2);
+
+            if (result == 1)
+                return true;
+
+            return false;
         }
     }
 }
