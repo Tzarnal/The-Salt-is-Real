@@ -15,19 +15,24 @@ using System.Globalization;
 
 namespace ChromiumConsole
 {
-    class Program
+    public class SaltyConsole
     {
         public static ChromiumWebBrowser frontPageBrowser;
+        public static bool refreshLoopInitiated = false;
+
+        private string _saltyAccount;
+        private string _saltyPassword;
 
         static LoginService loginService;
         static Thread refreshThread;
 
         static SaltyStateMachine saltyStateMachine;
-
-        public static bool refreshLoopInitiated = false;
-
-        static void Main(string[] args)
+       
+        public void Start(string account, string password)
         {
+            _saltyAccount = account;
+            _saltyPassword = password;
+
             Console.ForegroundColor = ConsoleColor.White;
 
             //ChooseBettingRiskLevel();
@@ -95,7 +100,7 @@ namespace ChromiumConsole
             Cef.Shutdown();
         }
 
-        private static void InitializeServices()
+        private void InitializeServices()
         {
             refreshThread = new Thread(RefreshLoop);
 
@@ -119,7 +124,7 @@ namespace ChromiumConsole
             //RISK LEVEL
             BetService.BetSettings.Risk_Level = BetSettings.RISK_LEVEL.RISKY;
 
-            loginService = new LoginService("<usersname>", "<password>", frontPageBrowser);
+            loginService = new LoginService(_saltyAccount, _saltyPassword, frontPageBrowser);
 
             frontPageBrowser.LoadingStateChanged += Browser_LoadingStateChanged;
 

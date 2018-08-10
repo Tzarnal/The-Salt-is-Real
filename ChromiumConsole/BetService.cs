@@ -29,8 +29,8 @@ namespace ChromiumConsole
 
             bool successflag1, successflag2;
 
-            JavaScriptService.ExecuteJS($"document.getElementById(\"wager\").value = \"{BetAmount}\"", Program.frontPageBrowser, out successflag1);
-            JavaScriptService.ExecuteJS($"document.getElementById(\"{player}\").click()", Program.frontPageBrowser, out successflag2);
+            JavaScriptService.ExecuteJS($"document.getElementById(\"wager\").value = \"{BetAmount}\"", SaltyConsole.frontPageBrowser, out successflag1);
+            JavaScriptService.ExecuteJS($"document.getElementById(\"{player}\").click()", SaltyConsole.frontPageBrowser, out successflag2);
 
             if (!successflag1 || !successflag2)
             {

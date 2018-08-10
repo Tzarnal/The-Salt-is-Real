@@ -10,7 +10,7 @@ namespace ChromiumConsole
 {
     static class DataExtractor
     {
-        private static ChromiumWebBrowser frontPageBrowser = Program.frontPageBrowser;
+        private static ChromiumWebBrowser frontPageBrowser = SaltyConsole.frontPageBrowser;
 
         public static string GetBetState()
         {
