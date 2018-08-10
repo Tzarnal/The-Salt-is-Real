@@ -3,7 +3,6 @@ using System.Threading;
 using CefSharp;
 using CefSharp.OffScreen;
 using System.IO;
-using System.Globalization;
 using ChromiumConsole.EventArguments;
 
 namespace ChromiumConsole
@@ -164,8 +163,19 @@ namespace ChromiumConsole
 
                 if (pickedPlayerWon)
                 {
-                    matchEndEventArgs.WinningPlayer = pickedPlayer;
-                    matchEndEventArgs.WinningPlayerName = MatchInformation.currentBettedPlayer;
+                    if (pickedPlayer == Players.BluePlayer)
+                    {
+                        matchEndEventArgs.WinningPlayer = Players.BluePlayer;
+                        matchEndEventArgs.WinningPlayerName = MatchInformation.currentBluePlayer;
+                        matchEndEventArgs.LoosingPlayerName = MatchInformation.currentRedPlayer;
+
+                    }
+                    else
+                    {
+                        matchEndEventArgs.WinningPlayer = Players.RedPlayer;
+                        matchEndEventArgs.WinningPlayerName = MatchInformation.currentRedPlayer;
+                        matchEndEventArgs.LoosingPlayerName = MatchInformation.currentBluePlayer;
+                    }
                 }
                 else
                 {
@@ -173,11 +183,13 @@ namespace ChromiumConsole
                     {
                         matchEndEventArgs.WinningPlayer = Players.RedPlayer;
                         matchEndEventArgs.WinningPlayerName = MatchInformation.currentRedPlayer;
+                        matchEndEventArgs.LoosingPlayerName = MatchInformation.currentBluePlayer;
                     }
                     else
                     {
                         matchEndEventArgs.WinningPlayer = Players.BluePlayer;
                         matchEndEventArgs.WinningPlayerName = MatchInformation.currentBluePlayer;
+                        matchEndEventArgs.LoosingPlayerName = MatchInformation.currentRedPlayer;
                     }
                 }
             }                        

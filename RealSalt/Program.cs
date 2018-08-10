@@ -1,7 +1,9 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using ChromiumConsole;
 using ChromiumConsole.EventArguments;
+using RealSalt.Data;
 using Serilog;
 
 namespace RealSalt
@@ -10,6 +12,8 @@ namespace RealSalt
     {
         private static SaltyConsole _saltyBetConsole;
         private static Configuration _saltyConfiguration;
+        private static ForbiddingManse _forbiddingManse;
+
 
         static void Main(string[] args)
         {            
@@ -21,7 +25,11 @@ namespace RealSalt
             LoadConfig();
 
             _saltyBetConsole = new SaltyConsole();
+            _forbiddingManse = new ForbiddingManse();
             
+            Log.Information("Database contains {CharacterCount} Characters.",
+                +_forbiddingManse.Characters.Count());
+
             _saltyBetConsole.LoginSuccess += SaltyBetConsoleOnLoginSuccess;
             _saltyBetConsole.MatchStart += ConsoleOnMatchStart;
             _saltyBetConsole.MatchEnded += SaltyBetConsoleOnMatchEnded;
@@ -92,6 +100,8 @@ namespace RealSalt
                 matchEndArgs.Salt,
                 balanceSymbol,
                 matchEndArgs.SaltBalanceChange);
+
+            _forbiddingManse.RegisterMatchResult(matchEndArgs.WinningPlayerName,matchEndArgs.LoosingPlayerName);
         }
     }
 }

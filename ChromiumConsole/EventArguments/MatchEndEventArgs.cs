@@ -13,6 +13,7 @@ namespace ChromiumConsole.EventArguments
 
         public SaltyConsole.Players WinningPlayer { get; set; }
         public string WinningPlayerName { get; set; }
+        public string LoosingPlayerName { get; set; }
         public int SaltBalanceChange { get; set; }
     }
 }
