@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using ChromiumConsole;
 using ChromiumConsole.EventArguments;
 using RealSalt.Data;
@@ -13,10 +14,36 @@ namespace RealSalt
         private static SaltyConsole _saltyBetConsole;
         private static Configuration _saltyConfiguration;
         private static ForbiddingManse _forbiddingManse;
+        private static SessionResults _sessionResults;
 
+        #region MyRegion
+        // Declare the SetConsoleCtrlHandler function
+        // as external and receiving a delegate.
 
-        static void Main(string[] args)
-        {            
+        [DllImport("Kernel32")]
+        public static extern bool SetConsoleCtrlHandler(HandlerRoutine handler, bool add);
+
+        // A delegate type to be used as the handler routine
+        // for SetConsoleCtrlHandler.
+        public delegate bool HandlerRoutine(CtrlTypes ctrlType);
+
+        // An enumerated type for the control messages
+        // sent to the handler routine.
+        public enum CtrlTypes
+        {
+            CtrlCEvent = 0,
+            CtrlBreakEvent,
+            CtrlCloseEvent,
+            CtrlLogoffEvent = 5,
+            CtrlShutdownEvent
+        }
+        #endregion
+
+        static void Main()
+        {
+            //Set ctrl-c handler
+            SetConsoleCtrlHandler(ConsoleCtrlCheck, true);
+
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()                
                 .WriteTo.Console()
@@ -26,6 +53,7 @@ namespace RealSalt
 
             _saltyBetConsole = new SaltyConsole();
             _forbiddingManse = new ForbiddingManse();
+            _sessionResults = new SessionResults();
             
             Log.Information("Database contains {CharacterCount} Characters.",
                 +_forbiddingManse.Characters.Count());
@@ -51,10 +79,19 @@ namespace RealSalt
             }
         }
 
+        private static bool ConsoleCtrlCheck(CtrlTypes ctrlType)
+        {
+            _forbiddingManse.SaveChanges();
+
+            _sessionResults.DisplayResult();
+
+            SaltyConsole.exit = true;
+            return true;
+        }
 
         private static void SaltyBetConsoleOnLoginSuccess(object sender, EventArgs e)
         {           
-            Log.Information($"Logged in to SaltyBet.");
+            Log.Information("Logged in to SaltyBet.");
         }
 
         private static void ConsoleOnMatchStart(object sender, EventArgs eventArgs)
@@ -68,6 +105,10 @@ namespace RealSalt
                 return;
             }
 
+            if (_sessionResults.StartingSalt == 0)
+            {
+                _sessionResults.StartingSalt = matchStartArgs.Salt;
+            }
 
             _saltyBetConsole.PlaceBet(SaltyConsole.Players.RedPlayer,10);
 
@@ -102,6 +143,17 @@ namespace RealSalt
                 matchEndArgs.SaltBalanceChange);
 
             _forbiddingManse.RegisterMatchResult(matchEndArgs.WinningPlayerName,matchEndArgs.LoosingPlayerName);
+
+            _sessionResults.CurrentSalt = matchEndArgs.Salt;
+            if (matchEndArgs.PickedPlayerName == matchEndArgs.WinningPlayerName)
+            {
+                _sessionResults.Wins++;
+            }
+            else
+            {
+                _sessionResults.Losses++;
+            }
+
         }
     }
 }

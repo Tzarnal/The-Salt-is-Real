@@ -64,6 +64,7 @@
     <Compile Include="Configuration.cs" />
     <Compile Include="Data\Character.cs" />
     <Compile Include="Data\ForbiddingManse.cs" />
+    <Compile Include="Data\SessionResults.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

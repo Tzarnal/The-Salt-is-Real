@@ -151,6 +151,8 @@ namespace ChromiumConsole
             //If last match was bet on
             if (MatchInformation.HasPlacedBet)
             {
+                matchEndEventArgs.PickedPlayerName = MatchInformation.currentBettedPlayer;
+
                 MatchInformation.UpdateMatchEarnings();
 
                 var pickedPlayerWon = (MatchInformation.SaltBeforeMatch < PlayerInformation.SaltAmount);
