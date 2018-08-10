@@ -50,19 +50,48 @@ namespace RealSalt
         }
 
         private static void ConsoleOnMatchStart(object sender, EventArgs eventArgs)
-        {
+        {            
             var matchStartArgs = (MatchStartEventArgs) eventArgs;
-            
-           _saltyBetConsole.PlaceBet(SaltyConsole.Players.RedPlayer,10);
 
-            Log.Information($"Match Started : {matchStartArgs.RedPlayer} vs {matchStartArgs.BluePlayer}. Betting 10$ on {matchStartArgs.RedPlayer}.");
+            if (matchStartArgs.RedPlayer == "null" ||
+                matchStartArgs.BluePlayer == "null")
+            {
+                Log.Information("Match already in progress.");
+                return;
+            }
+
+
+            _saltyBetConsole.PlaceBet(SaltyConsole.Players.RedPlayer,10);
+
+            Log.Information("Match Started : {RedPlayer} vs {BluePlayer}. Betting {SaltAmount}$ on {RedPlayer}.",
+                matchStartArgs.RedPlayer,
+                matchStartArgs.BluePlayer,
+                10);
         }
 
         private static void SaltyBetConsoleOnMatchEnded(object sender, EventArgs eventArgs)
         {
             var matchEndArgs = (MatchEndEventArgs) eventArgs;
 
-            Log.Information($"Match Ended: {matchEndArgs.WinningPlayerName} won. Balance {matchEndArgs.Salt}[{matchEndArgs.SaltBalanceChange}].");
+            if (matchEndArgs.WinningPlayer == SaltyConsole.Players.Unknown ||
+                matchEndArgs.RedPlayer == "null" ||
+                matchEndArgs.BluePlayer == "null")
+            {
+                Log.Information("Unmonitored match has completed.");
+                return;
+            }
+
+            var balanceSymbol = "";
+            if(matchEndArgs.SaltBalanceChange > 0)
+            {
+                balanceSymbol = "+";
+            }
+
+            Log.Information("Match Ended: {WinningPlayer} won. Balance {Salt}[{BalanceSymbol}{SaltDifference}].",
+                matchEndArgs.WinningPlayerName,
+                matchEndArgs.Salt,
+                balanceSymbol,
+                matchEndArgs.SaltBalanceChange);
         }
     }
 }
