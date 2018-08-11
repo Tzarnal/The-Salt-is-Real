@@ -182,7 +182,7 @@ namespace RealSalt
             }
 
 
-            Log.Information("Match Started : {RedPlayer}({RedStats}) vs {BluePlayer}({BlueStats}). Betting {SaltAmount}$ on {BetPlayer}.",
+            Log.Information("Match Start: {RedPlayer}({RedStats}) vs {BluePlayer}({BlueStats}). Betting {SaltAmount}$ on {BetPlayer}.",
                 matchStartArgs.RedPlayer,
                 redPlayer.ToString(),
                 matchStartArgs.BluePlayer,
