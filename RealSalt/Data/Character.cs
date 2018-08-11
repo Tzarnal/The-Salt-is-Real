@@ -1,4 +1,6 @@
-﻿namespace RealSalt.Data
+﻿using System;
+
+namespace RealSalt.Data
 {
     public class Character
     {
@@ -9,7 +11,14 @@
         public int Losses { get; set; }
 
         public int Matches => Wins + Losses;
-        public int WinPercent => Wins / Matches * 100;
+        public double WinPercent
+        {
+            get
+            {
+                var percent=  (double) Wins / (double) Matches * 100;
+                return Math.Round(percent, 1);
+            }
+        }
 
         public bool IsReliableData => Matches > 4;
 
@@ -33,7 +42,7 @@
 
             var modifier = (WinPercent - 50) / 10;
 
-            return startingAmount * modifier;
+            return (int) (startingAmount * modifier);
         }
     }
 }

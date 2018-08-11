@@ -12,7 +12,14 @@ namespace RealSalt.Data
         public int CurrentSalt { get; set; }
 
         public int Matches => Wins + Losses;
-        public int WinPercent => (Wins / Matches) * 100;
+        public double WinPercent
+        {
+            get
+            {
+                var percent = (double)Wins / (double)Matches * 100;
+                return Math.Round(percent, 1);
+            }
+        }
 
         public void DisplayResult()
         {
