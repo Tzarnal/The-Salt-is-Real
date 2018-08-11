@@ -242,7 +242,9 @@ namespace RealSalt
         private static int BaseBetAmount(int salt)
         {
             var digits = Math.Floor(Math.Log10(salt) + 1);
-            return (int) digits / 100;
+            var targetDigits = (int)digits - 3;
+
+            return (int) Math.Pow(10, targetDigits);
         }
 
         private static bool IsHeads()
