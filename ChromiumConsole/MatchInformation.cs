@@ -16,6 +16,8 @@
         public static bool HasPlacedBet = false;
         public static bool HasOfferedBet = false;
 
+        public static bool Tournament = false;
+        public static int BracketCount;
 
         public static void UpdateFighterData()
         {

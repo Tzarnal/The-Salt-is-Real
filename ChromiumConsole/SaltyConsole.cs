@@ -140,8 +140,8 @@ namespace ChromiumConsole
                 BluePlayer = MatchInformation.currentBluePlayer,
                 RedPlayer = MatchInformation.currentRedPlayer,
 
-                Tournament = false,
-                TournamentPlayersRemaining = 0,
+                Tournament = DataExtractor.GetTournamentActive(),                
+                TournamentPlayersRemaining = DataExtractor.GetBracketCount(),
 
                 WinningPlayer = winningPlayer,
                 SaltBalanceChange =DataExtractor.GetSaltBalanceNum() - MatchInformation.SaltBeforeMatch,
@@ -245,8 +245,8 @@ namespace ChromiumConsole
                     BluePlayer = MatchInformation.currentBluePlayer,
                     RedPlayer = MatchInformation.currentRedPlayer,
 
-                    Tournament = false,
-                    TournamentPlayersRemaining = 0,
+                    Tournament = DataExtractor.GetTournamentActive(),
+                    TournamentPlayersRemaining = DataExtractor.GetBracketCount(),
                 };
 
                 OnMatchStart(matchStartEventArgs);

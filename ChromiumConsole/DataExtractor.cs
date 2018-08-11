@@ -67,6 +67,23 @@ namespace ChromiumConsole
             return JavaScriptService.EvaluateJS("lastWager", frontPageBrowser);
         }
 
-        
+        public static bool GetTournamentActive()
+        {
+            return JavaScriptService.EvaluateJS("$(\"html body div#wrapper.locked div#bottomcontent form#fightcard div#balancewrapper span#tournament-note\").text()", frontPageBrowser) == "(Tournament Balance)";
+        }
+
+        public static int GetBracketCount()
+        {
+            var countText = JavaScriptService.EvaluateJS("$(\"#footer-alert\").text()", frontPageBrowser);
+
+            if (string.IsNullOrWhiteSpace(countText))
+                return 0;
+
+            var firstChar = countText[0].ToString();
+
+            short count;
+
+            return Int16.TryParse(firstChar, out count) ? count : 0;
+        }
     }
 }
