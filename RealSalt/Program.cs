@@ -100,6 +100,7 @@ namespace RealSalt
         private static void ConsoleOnMatchStart(object sender, EventArgs eventArgs)
         {            
             var matchStartArgs = (MatchStartEventArgs) eventArgs;
+            string betSymbol = " ";
 
             if (matchStartArgs.RedPlayer == "null" ||
                 matchStartArgs.BluePlayer == "null")
@@ -114,7 +115,7 @@ namespace RealSalt
             }
 
             //Default Values            
-            var betSalt = 10;
+            var betSalt = BaseBetAmount(matchStartArgs.Salt);
             var betCharacter = SaltyConsole.Players.RedPlayer;
 
 
@@ -134,6 +135,7 @@ namespace RealSalt
                     betCharacter = SaltyConsole.Players.BluePlayer;
                     betSalt += bluePlayer.AdditionalBetAmount(betSalt);
                 }
+                betSymbol = "=";
             }
             else if (redPlayer.IsReliableData)
             {
@@ -146,6 +148,7 @@ namespace RealSalt
                 {
                     betCharacter = SaltyConsole.Players.BluePlayer;
                 }
+                betSymbol = "-";
             }
             else if (bluePlayer.IsReliableData)
             {
@@ -158,14 +161,16 @@ namespace RealSalt
                 {
                     betCharacter = SaltyConsole.Players.RedPlayer;
                 }
+                betSymbol = "-";
             }
             else
             {
                 //No clue what to do, just bet randomly.
-                if (isHeads())
+                if (IsHeads())
                 {
-                    betCharacter = SaltyConsole.Players.BluePlayer;
+                    betCharacter = SaltyConsole.Players.BluePlayer;                    
                 }
+                betSymbol = "~";
             }
                         
             //Place and report bet.
@@ -181,8 +186,8 @@ namespace RealSalt
                 betCharacterName = matchStartArgs.RedPlayer;
             }
 
-
-            Log.Information("Match Start: {RedPlayer}({RedStats}) vs {BluePlayer}({BlueStats}). Betting {SaltAmount}$ on {BetPlayer}.",
+            Log.Information("Match Start: [{BetSymbol}] {RedPlayer}({RedStats}) vs {BluePlayer}({BlueStats}). Betting {SaltAmount}$ on {BetPlayer}.",
+                betSymbol,
                 matchStartArgs.RedPlayer,
                 redPlayer.ToString(),
                 matchStartArgs.BluePlayer,
@@ -204,32 +209,43 @@ namespace RealSalt
             }
 
             var balanceSymbol = "";
-            if(matchEndArgs.SaltBalanceChange > 0)
+            var resultSymbol = " ";
+            if (matchEndArgs.SaltBalanceChange > 0)
             {
                 balanceSymbol = "+";
+                resultSymbol = "W";
+            }else if (matchEndArgs.SaltBalanceChange < 0)
+            {
+                resultSymbol = "L";
+            }
+                        
+            _sessionResults.CurrentSalt = matchEndArgs.Salt;
+            if (matchEndArgs.PickedPlayerName == matchEndArgs.WinningPlayerName)
+            {
+                _sessionResults.Wins++;            
+            }
+            else
+            {
+                _sessionResults.Losses++;                
             }
 
-            Log.Information("Match Ended: {WinningPlayer} won. Balance {Salt}[{BalanceSymbol}{SaltDifference}].",
+            Log.Information("Match Ended: [{ResultSymbol}] {WinningPlayer} won. Balance {Salt}[{BalanceSymbol}{SaltDifference}].",
+                resultSymbol,
                 matchEndArgs.WinningPlayerName,
                 matchEndArgs.Salt,
                 balanceSymbol,
                 matchEndArgs.SaltBalanceChange);
 
-            _forbiddingManse.RegisterMatchResult(matchEndArgs.WinningPlayerName,matchEndArgs.LoosingPlayerName);
-
-            _sessionResults.CurrentSalt = matchEndArgs.Salt;
-            if (matchEndArgs.PickedPlayerName == matchEndArgs.WinningPlayerName)
-            {
-                _sessionResults.Wins++;
-            }
-            else
-            {
-                _sessionResults.Losses++;
-            }
-
+            _forbiddingManse.RegisterMatchResult(matchEndArgs.WinningPlayerName,matchEndArgs.LoosingPlayerName);            
         }
 
-        private static bool isHeads()
+        private static int BaseBetAmount(int salt)
+        {
+            var digits = Math.Floor(Math.Log10(salt) + 1);
+            return (int) digits / 100;
+        }
+
+        private static bool IsHeads()
         {
             var result = _genie.Next(0, 2);
 
