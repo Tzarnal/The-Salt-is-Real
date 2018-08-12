@@ -1,11 +1,11 @@
 ﻿using System;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using ChromiumConsole;
 using ChromiumConsole.EventArguments;
 using RealSalt.Data;
+using RealSalt.BettingEngine;
 using Serilog;
 
 namespace RealSalt
@@ -16,7 +16,10 @@ namespace RealSalt
         private static Configuration _saltyConfiguration;
         private static ForbiddingManse _forbiddingManse;
         private static SessionResults _sessionResults;
-        private static Random _genie;
+
+        private static IBettingEngine _bettingEngine;
+        private static IBettingEngine _tournamentBettingEngine;
+        private static IBettingEngine _bettingEngineBackup;
 
         #region MyRegion
         // Declare the SetConsoleCtrlHandler function
@@ -56,8 +59,10 @@ namespace RealSalt
             _saltyBetConsole = new SaltyConsole();
             _forbiddingManse = new ForbiddingManse();
             _sessionResults = new SessionResults();
-            _genie = new Random();
 
+            _bettingEngine = new WinRateAdjusted(_forbiddingManse);
+            _tournamentBettingEngine = new TournamentBet(_forbiddingManse);
+            _bettingEngineBackup = new RandomBet();
 
             Log.Information("Database contains {CharacterCount} Characters.",
                 +_forbiddingManse.Characters.Count());
@@ -101,8 +106,12 @@ namespace RealSalt
         private static void ConsoleOnMatchStart(object sender, EventArgs eventArgs)
         {            
             var matchStartArgs = (MatchStartEventArgs) eventArgs;
-            string betSymbol = " ";
+                    
+            int betSalt;
+            SaltyConsole.Players betCharacter;
+            string betSymbol;
 
+            //Don't try to bet on matches already in progress
             if (matchStartArgs.RedPlayer == "null" ||
                 matchStartArgs.BluePlayer == "null")
             {
@@ -110,70 +119,35 @@ namespace RealSalt
                 return;
             }
 
+            //Store some session information
             if (_sessionResults.StartingSalt == 0)
             {
                 _sessionResults.StartingSalt = matchStartArgs.Salt;
             }
 
-            //Default Values            
-            var betSalt = BaseBetAmount(matchStartArgs.Salt);
-            var betCharacter = SaltyConsole.Players.RedPlayer;
+            Tuple<string, int, SaltyConsole.Players> betPlan;
 
-
-            var bluePlayer = _forbiddingManse.GetOrCreateCharacter(matchStartArgs.BluePlayer);
-            var redPlayer = _forbiddingManse.GetOrCreateCharacter(matchStartArgs.RedPlayer);
-
-            if (redPlayer.IsReliableData && bluePlayer.IsReliableData)
+            if (matchStartArgs.Tournament)
             {
-                //Ideal case, we have reliable information on both characters
-                if (redPlayer.WinPercent > bluePlayer.WinPercent)
-                {
-                    betCharacter = SaltyConsole.Players.RedPlayer;
-                    betSalt += redPlayer.AdditionalBetAmount(betSalt);
-                }
-                else
-                {
-                    betCharacter = SaltyConsole.Players.BluePlayer;
-                    betSalt += bluePlayer.AdditionalBetAmount(betSalt);
-                }
-                betSymbol = "=";
-            }
-            else if (redPlayer.IsReliableData)
-            {
-                if (redPlayer.WinPercent > 50)
-                {
-                    betCharacter = SaltyConsole.Players.RedPlayer;
-                    betSalt += redPlayer.AdditionalBetAmount(betSalt);
-                }
-                else
-                {
-                    betCharacter = SaltyConsole.Players.BluePlayer;
-                }
-                betSymbol = "-";
-            }
-            else if (bluePlayer.IsReliableData)
-            {
-                if (bluePlayer.WinPercent > 50)
-                {
-                    betCharacter = SaltyConsole.Players.BluePlayer;
-                    betSalt += bluePlayer.AdditionalBetAmount(betSalt);
-                }
-                else
-                {
-                    betCharacter = SaltyConsole.Players.RedPlayer;
-                }
-                betSymbol = "-";
+                //For Tournaments
+                betPlan = _tournamentBettingEngine.PlaceBet(matchStartArgs);
             }
             else
             {
-                //No clue what to do, just bet randomly.
-                if (IsHeads())
-                {
-                    betCharacter = SaltyConsole.Players.BluePlayer;                    
-                }
-                betSymbol = "~";
+                //Regular betting engine
+                betPlan = _bettingEngine.PlaceBet(matchStartArgs);
             }
                         
+            //In case no bet was placed, fallback to random
+            if (betPlan.Item3 == SaltyConsole.Players.Unknown)
+            {
+                betPlan = _bettingEngineBackup.PlaceBet(matchStartArgs);
+            }
+
+            betCharacter = betPlan.Item3;
+            betSalt = betPlan.Item2;
+            betSymbol = betPlan.Item1;
+
             //Place and report bet.
             _saltyBetConsole.PlaceBet(betCharacter,betSalt);
 
@@ -186,6 +160,9 @@ namespace RealSalt
             {
                 betCharacterName = matchStartArgs.RedPlayer;
             }
+
+            var bluePlayer = _forbiddingManse.GetOrCreateCharacter(matchStartArgs.BluePlayer);
+            var redPlayer = _forbiddingManse.GetOrCreateCharacter(matchStartArgs.RedPlayer);
 
             Log.Information("Match Start: [{BetSymbol}] {RedPlayer}({RedStats}) vs {BluePlayer}({BlueStats}). Betting {SaltAmount}$ on {BetPlayer}.",
                 betSymbol,
@@ -238,24 +215,6 @@ namespace RealSalt
                 matchEndArgs.SaltBalanceChange);
 
             _forbiddingManse.RegisterMatchResult(matchEndArgs.WinningPlayerName,matchEndArgs.LoosingPlayerName);            
-        }
-
-        private static int BaseBetAmount(int salt)
-        {
-            var digits = Math.Floor(Math.Log10(salt) + 1);
-            var targetDigits = (int)digits - 3;
-
-            return (int) Math.Pow(10, targetDigits);
-        }
-
-        private static bool IsHeads()
-        {
-            var result = _genie.Next(0, 2);
-
-            if (result == 1)
-                return true;
-
-            return false;
         }
     }
 }

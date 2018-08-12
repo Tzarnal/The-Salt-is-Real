@@ -5,6 +5,7 @@ using CefSharp.OffScreen;
 using System.IO;
 using ChromiumConsole.EventArguments;
 
+
 namespace ChromiumConsole
 {
     public class SaltyConsole
@@ -31,7 +32,7 @@ namespace ChromiumConsole
         private static bool _checkedTournament;
         private static bool _lastMatchWasTournament = false;
         private static int _lastTournamentCount = 0;
-
+        
         static LoginService loginService;
         static Thread refreshThread;
 
