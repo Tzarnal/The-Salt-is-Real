@@ -141,8 +141,6 @@ namespace RealSalt
                 {
                     _tournamentResults = new SessionResults {StartingSalt = matchStartArgs.Salt};
                 }
-
-                _lastMatchWasTournament = true;
                 betPlan = _tournamentBettingEngine.PlaceBet(matchStartArgs);
             }
             else
@@ -264,12 +262,13 @@ namespace RealSalt
                 balanceSymbol,
                 matchEndArgs.SaltBalanceChange);
 
+            _lastMatchWasTournament = false;
+
             _forbiddingManse.RegisterMatchResult(matchEndArgs.WinningPlayerName, matchEndArgs.LoosingPlayerName);
         }
 
         private static void TournamentMatchEnded(MatchEndEventArgs matchEndArgs)
         {
-            
             if (!_lastMatchWasTournament)
             {
                 //Zero out the balance change if we are coming from a non tournament match
@@ -312,6 +311,8 @@ namespace RealSalt
                 matchEndArgs.Salt,
                 balanceSymbol,
                 matchEndArgs.SaltBalanceChange);
+
+            _lastMatchWasTournament = true;
 
             _forbiddingManse.RegisterMatchResult(matchEndArgs.WinningPlayerName, matchEndArgs.LoosingPlayerName);
         }
