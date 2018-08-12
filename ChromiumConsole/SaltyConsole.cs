@@ -28,6 +28,10 @@ namespace ChromiumConsole
         private string _saltyAccount;
         private string _saltyPassword;
 
+        private static bool _checkedTournament;
+        private static bool _lastMatchWasTournament = false;
+        private static int _lastTournamentCount = 0;
+
         static LoginService loginService;
         static Thread refreshThread;
 
@@ -133,6 +137,8 @@ namespace ChromiumConsole
         
         private void SaltyStateMachine_StateOpenend(object sender, EventArgs e)
         {
+            _checkedTournament = false;
+
             var winningPlayer = Players.Unknown;
             var matchEndEventArgs = new MatchEndEventArgs
             {
@@ -140,8 +146,8 @@ namespace ChromiumConsole
                 BluePlayer = MatchInformation.currentBluePlayer,
                 RedPlayer = MatchInformation.currentRedPlayer,
 
-                Tournament = DataExtractor.GetTournamentActive(),                
-                TournamentPlayersRemaining = DataExtractor.GetBracketCount(),
+                Tournament = _lastMatchWasTournament,                
+                TournamentPlayersRemaining = _lastTournamentCount,
 
                 WinningPlayer = winningPlayer,
                 SaltBalanceChange =DataExtractor.GetSaltBalanceNum() - MatchInformation.SaltBeforeMatch,
@@ -231,6 +237,32 @@ namespace ChromiumConsole
 
         private void Refresh()
         {
+            if (DataExtractor.GetBetState() == "locked" && !_checkedTournament)
+            {
+                _checkedTournament = true;
+
+                var isTournament = DataExtractor.GetTournamentActive();
+                var bracketCount = DataExtractor.GetBracketCount();
+
+                if (isTournament && !_lastMatchWasTournament)
+                {
+                    //its a tournament now, offer a new bet;
+                    var matchStartEventArgs = new MatchStartEventArgs
+                    {
+                        Salt = DataExtractor.GetSaltBalanceNum(),
+                        BluePlayer = MatchInformation.currentBluePlayer,
+                        RedPlayer = MatchInformation.currentRedPlayer,
+
+                        Tournament = true,
+                        TournamentPlayersRemaining = bracketCount,
+                    };
+
+                    OnMatchStart(matchStartEventArgs);
+                }
+
+                _lastMatchWasTournament = isTournament;
+                _lastTournamentCount = bracketCount;
+            }
 
             saltyStateMachine.RefreshState();
             MatchInformation.UpdateFighterData();
@@ -239,19 +271,31 @@ namespace ChromiumConsole
             {
                 MatchInformation.UpdateData();
 
+                if (_lastMatchWasTournament && _lastTournamentCount > 1)
+                {
+                    _lastTournamentCount--;
+                }
+
+                if (_lastTournamentCount <= 1)
+                {
+                    _lastMatchWasTournament = false;
+                }
+
+
                 var matchStartEventArgs = new MatchStartEventArgs
                 {
                     Salt = DataExtractor.GetSaltBalanceNum(),
                     BluePlayer = MatchInformation.currentBluePlayer,
                     RedPlayer = MatchInformation.currentRedPlayer,
 
-                    Tournament = DataExtractor.GetTournamentActive(),
-                    TournamentPlayersRemaining = DataExtractor.GetBracketCount(),
+                    Tournament = _lastMatchWasTournament,
+                    TournamentPlayersRemaining = _lastTournamentCount,
                 };
 
                 OnMatchStart(matchStartEventArgs);
                 MatchInformation.HasOfferedBet = true;
-            }            
+            }
+            
         }
 
         private void RefreshLoop()

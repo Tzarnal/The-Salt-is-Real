@@ -69,7 +69,9 @@ namespace ChromiumConsole
 
         public static bool GetTournamentActive()
         {
-            return JavaScriptService.EvaluateJS("$(\"html body div#wrapper.locked div#bottomcontent form#fightcard div#balancewrapper span#tournament-note\").text()", frontPageBrowser) == "(Tournament Balance)";
+            var result =  JavaScriptService.EvaluateJS("$(\"html body div#wrapper.locked div#bottomcontent form#fightcard div#balancewrapper span#tournament-note\").text()", frontPageBrowser);
+
+            return result == "(Tournament Balance)";
         }
 
         public static int GetBracketCount()
