@@ -18,7 +18,7 @@ namespace RealSalt.BettingEngine
 
         public Tuple<string, int, SaltyConsole.Players> PlaceBet(MatchStartEventArgs matchArgs)
         {
-            var betSymbol = "T";
+            string betSymbol;
 
             var betSalt = BaseBetAmount(matchArgs.Salt,matchArgs.TournamentPlayersRemaining);
             var betCharacter = SaltyConsole.Players.Unknown;
@@ -37,7 +37,7 @@ namespace RealSalt.BettingEngine
                 {
                     betCharacter = SaltyConsole.Players.BluePlayer;
                 }
-                betSymbol = "T=";
+                betSymbol = "=";
             }
             else if (redPlayer.IsReliableData)
             {
@@ -49,7 +49,7 @@ namespace RealSalt.BettingEngine
                 {
                     betCharacter = SaltyConsole.Players.BluePlayer;
                 }
-                betSymbol = "T-";
+                betSymbol = "-";
             }
             else if (bluePlayer.IsReliableData)
             {
@@ -61,11 +61,11 @@ namespace RealSalt.BettingEngine
                 {
                     betCharacter = SaltyConsole.Players.RedPlayer;
                 }
-                betSymbol = "T-";
+                betSymbol = "-";
             }
             else
             {
-                betSymbol = "T~";
+                betSymbol = "~";
                 betCharacter = SaltyConsole.Players.RedPlayer;
                 if (IsHeads())
                 {

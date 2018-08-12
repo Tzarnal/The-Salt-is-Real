@@ -15,11 +15,15 @@ namespace RealSalt
         private static SaltyConsole _saltyBetConsole;
         private static Configuration _saltyConfiguration;
         private static ForbiddingManse _forbiddingManse;
+
         private static SessionResults _sessionResults;
+        private static SessionResults _tournamentResults;
 
         private static IBettingEngine _bettingEngine;
         private static IBettingEngine _tournamentBettingEngine;
         private static IBettingEngine _bettingEngineBackup;
+
+        private static bool _lastMatchWasTournament;
 
         #region MyRegion
         // Declare the SetConsoleCtrlHandler function
@@ -58,7 +62,9 @@ namespace RealSalt
 
             _saltyBetConsole = new SaltyConsole();
             _forbiddingManse = new ForbiddingManse();
+
             _sessionResults = new SessionResults();
+            _tournamentResults = new SessionResults();
 
             _bettingEngine = new WinRateAdjusted(_forbiddingManse);
             _tournamentBettingEngine = new TournamentBet(_forbiddingManse);
@@ -130,6 +136,13 @@ namespace RealSalt
             if (matchStartArgs.Tournament)
             {
                 //For Tournaments
+
+                if (!_lastMatchWasTournament)
+                {
+                    _tournamentResults = new SessionResults {StartingSalt = matchStartArgs.Salt};
+                }
+
+                _lastMatchWasTournament = true;
                 betPlan = _tournamentBettingEngine.PlaceBet(matchStartArgs);
             }
             else
@@ -164,7 +177,16 @@ namespace RealSalt
             var bluePlayer = _forbiddingManse.GetOrCreateCharacter(matchStartArgs.BluePlayer);
             var redPlayer = _forbiddingManse.GetOrCreateCharacter(matchStartArgs.RedPlayer);
 
-            Log.Information("Match Start: [{BetSymbol}] {RedPlayer}({RedStats}) vs {BluePlayer}({BlueStats}). Betting {SaltAmount}$ on {BetPlayer}.",
+            var reportString =
+                "Match Start: [{BetSymbol}] {RedPlayer}({RedStats}) vs {BluePlayer}({BlueStats}). Betting {SaltAmount}$ on {BetPlayer}.";
+
+            if (matchStartArgs.Tournament)
+            {
+                reportString =
+                    "Tournament Match Start: [{BetSymbol}] {RedPlayer}({RedStats}) vs {BluePlayer}({BlueStats}). Betting {SaltAmount}$ on {BetPlayer}.";
+            }
+
+            Log.Information(reportString,
                 betSymbol,
                 matchStartArgs.RedPlayer,
                 redPlayer.ToString(),
@@ -177,6 +199,33 @@ namespace RealSalt
         private static void SaltyBetConsoleOnMatchEnded(object sender, EventArgs eventArgs)
         {
             var matchEndArgs = (MatchEndEventArgs) eventArgs;
+
+            if (matchEndArgs.Tournament)
+            {
+                TournamentMatchEnded(matchEndArgs);
+
+                //Report total tournament results at the end of the tournament
+                if (matchEndArgs.TournamentPlayersRemaining <= 2)
+                {
+                    Log.Information("Tournament Results: ");
+
+                    _tournamentResults.DisplayResult();
+                    Console.WriteLine("");
+                }
+
+                return;
+            }
+
+            MatchEnded(matchEndArgs);            
+        }
+
+        private static void MatchEnded(MatchEndEventArgs matchEndArgs)
+        {
+            if (_lastMatchWasTournament)
+            {
+                //Zero out the balance change if we are coming from a tournament match
+                matchEndArgs.SaltBalanceChange = 0;
+            }
 
             if (matchEndArgs.WinningPlayer == SaltyConsole.Players.Unknown ||
                 matchEndArgs.RedPlayer == "null" ||
@@ -192,19 +241,20 @@ namespace RealSalt
             {
                 balanceSymbol = "+";
                 resultSymbol = "W";
-            }else if (matchEndArgs.SaltBalanceChange < 0)
+            }
+            else if (matchEndArgs.SaltBalanceChange < 0)
             {
                 resultSymbol = "L";
             }
-                        
+
             _sessionResults.CurrentSalt = matchEndArgs.Salt;
             if (matchEndArgs.PickedPlayerName == matchEndArgs.WinningPlayerName)
             {
-                _sessionResults.Wins++;            
+                _sessionResults.Wins++;
             }
             else
             {
-                _sessionResults.Losses++;                
+                _sessionResults.Losses++;
             }
 
             Log.Information("Match Ended: [{ResultSymbol}] {WinningPlayer} won. Balance {Salt}[{BalanceSymbol}{SaltDifference}].",
@@ -214,7 +264,56 @@ namespace RealSalt
                 balanceSymbol,
                 matchEndArgs.SaltBalanceChange);
 
-            _forbiddingManse.RegisterMatchResult(matchEndArgs.WinningPlayerName,matchEndArgs.LoosingPlayerName);            
+            _forbiddingManse.RegisterMatchResult(matchEndArgs.WinningPlayerName, matchEndArgs.LoosingPlayerName);
+        }
+
+        private static void TournamentMatchEnded(MatchEndEventArgs matchEndArgs)
+        {
+            
+            if (!_lastMatchWasTournament)
+            {
+                //Zero out the balance change if we are coming from a non tournament match
+                matchEndArgs.SaltBalanceChange = 0;
+            }
+            
+            if (matchEndArgs.WinningPlayer == SaltyConsole.Players.Unknown ||
+                matchEndArgs.RedPlayer == "null" ||
+                matchEndArgs.BluePlayer == "null")
+            {
+                Log.Information("Unmonitored tournament match has completed.");
+                return;
+            }
+
+            var balanceSymbol = "";
+            var resultSymbol = " ";
+            if (matchEndArgs.SaltBalanceChange > 0)
+            {
+                balanceSymbol = "+";
+                resultSymbol = "W";
+            }
+            else if (matchEndArgs.SaltBalanceChange < 0)
+            {
+                resultSymbol = "L";
+            }
+
+            _tournamentResults.CurrentSalt = matchEndArgs.Salt;
+            if (matchEndArgs.PickedPlayerName == matchEndArgs.WinningPlayerName)
+            {
+                _tournamentResults.Wins++;
+            }
+            else
+            {
+                _tournamentResults.Losses++;
+            }
+
+            Log.Information("Tournament Match Ended: [{ResultSymbol}] {WinningPlayer} won. Balance {Salt}[{BalanceSymbol}{SaltDifference}].",
+                resultSymbol,
+                matchEndArgs.WinningPlayerName,
+                matchEndArgs.Salt,
+                balanceSymbol,
+                matchEndArgs.SaltBalanceChange);
+
+            _forbiddingManse.RegisterMatchResult(matchEndArgs.WinningPlayerName, matchEndArgs.LoosingPlayerName);
         }
     }
 }
