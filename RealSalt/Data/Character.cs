@@ -31,18 +31,5 @@ namespace RealSalt.Data
 
             return $"{WinPercent}% {Wins}W-{Losses}L";
         }
-
-        public int AdditionalBetAmount(int startingAmount)
-        {
-            if (WinPercent < 51 || Matches == 0)
-            {
-                return 0;
-            }
-                
-
-            var modifier = (WinPercent - 50) / 10;
-
-            return (int) (startingAmount * modifier);
-        }
     }
 }

@@ -29,13 +29,13 @@ namespace RealSalt.BettingEngine
                 //Ideal case, we have reliable information on both characters
                 if (redPlayer.WinPercent > bluePlayer.WinPercent)
                 {
-                    betCharacter = SaltyConsole.Players.RedPlayer;
-                    betSalt += redPlayer.AdditionalBetAmount(betSalt);
+                    betCharacter = SaltyConsole.Players.RedPlayer;                    
+                    betSalt += AdditionalBetAmount(redPlayer, betSalt);
                 }
                 else
                 {
-                    betCharacter = SaltyConsole.Players.BluePlayer;
-                    betSalt += bluePlayer.AdditionalBetAmount(betSalt);
+                    betCharacter = SaltyConsole.Players.BluePlayer;                    
+                    betSalt += AdditionalBetAmount(bluePlayer, betSalt);
                 }
                 betSymbol = "=";
             }
@@ -44,7 +44,7 @@ namespace RealSalt.BettingEngine
                 if (redPlayer.WinPercent > 50)
                 {
                     betCharacter = SaltyConsole.Players.RedPlayer;
-                    betSalt += redPlayer.AdditionalBetAmount(betSalt);
+                    betSalt += AdditionalBetAmount(redPlayer, betSalt);
                 }
                 else
                 {
@@ -57,7 +57,7 @@ namespace RealSalt.BettingEngine
                 if (bluePlayer.WinPercent > 50)
                 {
                     betCharacter = SaltyConsole.Players.BluePlayer;
-                    betSalt += bluePlayer.AdditionalBetAmount(betSalt);
+                    betSalt += AdditionalBetAmount(bluePlayer,betSalt);
                 }
                 else
                 {
@@ -75,6 +75,20 @@ namespace RealSalt.BettingEngine
             var targetDigits = (int)digits - 3;
 
             return (int)Math.Pow(10, targetDigits);
+        }
+
+
+        private int AdditionalBetAmount(Character player,int startingAmount)
+        {
+            if (player.WinPercent < 51 || player.Matches == 0)
+            {
+                return 0;
+            }
+
+
+            var modifier = (player.WinPercent - 50) / 10;
+
+            return (int)(startingAmount * modifier);
         }
     }
 }
