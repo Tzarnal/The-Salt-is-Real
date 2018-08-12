@@ -151,7 +151,7 @@ namespace ChromiumConsole
                 TournamentPlayersRemaining = _lastTournamentCount,
 
                 WinningPlayer = winningPlayer,
-                SaltBalanceChange =DataExtractor.GetSaltBalanceNum() - MatchInformation.SaltBeforeMatch,
+                SaltBalanceChange = DataExtractor.GetSaltBalanceNum() - MatchInformation.SaltBeforeMatch,
             };
 
 

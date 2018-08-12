@@ -81,11 +81,11 @@ namespace ChromiumConsole
             if (string.IsNullOrWhiteSpace(countText))
                 return 0;
 
-            var firstChar = countText[0].ToString();
+            var chars = countText.Substring(0,2).Trim();
 
             short count;
 
-            return Int16.TryParse(firstChar, out count) ? count : 0;
+            return Int16.TryParse(chars, out count) ? count : 0;
         }
     }
 }
