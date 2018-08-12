@@ -1,16 +1,24 @@
 ﻿using System.Data.Entity;
 using System.Linq;
 using Serilog;
+using Serilog.Core;
 
 namespace RealSalt.Data
 {
     public class ForbiddingManse : DbContext
     {
         public DbSet<Character> Characters { get; set; }
+        private Logger _scrollOfHeroes;
+
 
         public ForbiddingManse() : base("ForbiddingManse")
         {
             Database.SetInitializer(new DropCreateDatabaseIfModelChanges<ForbiddingManse>());
+
+            _scrollOfHeroes = new LoggerConfiguration()
+                .MinimumLevel.Verbose()
+                .WriteTo.File("Data/Scroll Of Heroes.log")
+                .CreateLogger();
         }
 
         public void RegisterMatchResult(string winningCharacterName, string loosingCharacterName)
@@ -20,6 +28,10 @@ namespace RealSalt.Data
 
             winningCharacter.Wins++;
             loosingCharacter.Losses++;
+
+            _scrollOfHeroes.Information("Match: {winner} vs {loser}. {winner} won.",
+                winningCharacter.Name,
+                loosingCharacter.Name);
 
             SaveChanges();
         }
