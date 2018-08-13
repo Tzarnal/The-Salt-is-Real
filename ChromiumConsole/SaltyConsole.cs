@@ -3,6 +3,7 @@ using System.Threading;
 using CefSharp;
 using CefSharp.OffScreen;
 using System.IO;
+using System.Text.RegularExpressions;
 using ChromiumConsole.EventArguments;
 
 
@@ -17,9 +18,23 @@ namespace ChromiumConsole
             Unknown,
         }
 
+        private enum MatchType
+        {
+            Matchmaking,
+            Tournament,
+            Exhibition
+        }
+
         public event EventHandler LoginSuccess;
         public event EventHandler MatchStart;
         public event EventHandler MatchEnded;
+
+        public event EventHandler TournamentMatchStart;
+        public event EventHandler TournamentMatchEnded;
+        public event EventHandler TournamentEnded;
+
+        public event EventHandler ExhibitionMatchStart;
+        public event EventHandler ExhibitionMatchEnded;
 
         public static ChromiumWebBrowser frontPageBrowser;
         public static bool refreshLoopInitiated = false;
@@ -28,11 +43,12 @@ namespace ChromiumConsole
 
         private string _saltyAccount;
         private string _saltyPassword;
-
-        private static bool _checkedTournament;
-        private static bool _lastMatchWasTournament = false;
-        private static int _lastTournamentCount = 0;
         
+        private static int _bracketCount = 0;
+
+        private static MatchType _nextMatchType;
+        private static MatchType _lastMatchType;
+
         static LoginService loginService;
         static Thread refreshThread;
 
@@ -87,6 +103,11 @@ namespace ChromiumConsole
 
         }
 
+        protected virtual void OnLoginSuccess(EventArgs e)
+        {
+            LoginSuccess?.Invoke(this, e);
+        }
+
         protected virtual void OnMatchStart(EventArgs e)
         {            
             MatchStart?.Invoke(this, e);
@@ -97,9 +118,29 @@ namespace ChromiumConsole
             MatchEnded?.Invoke(this, e);
         }
 
-        protected virtual void OnLoginSuccess(EventArgs e)
+        protected virtual void OnTournamentMatchStart(EventArgs e)
         {
-            LoginSuccess?.Invoke(this, e);
+            TournamentMatchStart?.Invoke(this, e);
+        }
+
+        protected virtual void OnTournamentMatchEnd(EventArgs e)
+        {
+            TournamentMatchEnded?.Invoke(this, e);
+        }
+        
+        protected virtual void OnTournamentEnded(EventArgs e)
+        {
+            TournamentEnded?.Invoke(this, e);
+        }
+        
+        protected virtual void OnExhibitionMatchStart(EventArgs e)
+        {
+            ExhibitionMatchStart?.Invoke(this, e);
+        }
+
+        protected virtual void OnExhibitionMatchEnded(EventArgs e)
+        {
+            ExhibitionMatchEnded?.Invoke(this, e);
         }
 
         private static void ShutDownServices()
@@ -127,7 +168,7 @@ namespace ChromiumConsole
 
             saltyStateMachine.StateClosed += SaltyStateMachine_StateClosed;
             saltyStateMachine.StateOpened += SaltyStateMachine_StateOpenend;
-
+            saltyStateMachine.StateClosedInformation += SaltyStateMachine_StateClosedInformation;
             
             loginService = new LoginService(_saltyAccount, _saltyPassword, frontPageBrowser);
 
@@ -138,8 +179,6 @@ namespace ChromiumConsole
         
         private void SaltyStateMachine_StateOpenend(object sender, EventArgs e)
         {
-            _checkedTournament = false;
-
             var winningPlayer = Players.Unknown;
             var matchEndEventArgs = new MatchEndEventArgs
             {
@@ -147,13 +186,12 @@ namespace ChromiumConsole
                 BluePlayer = MatchInformation.currentBluePlayer,
                 RedPlayer = MatchInformation.currentRedPlayer,
 
-                Tournament = _lastMatchWasTournament,                
-                TournamentPlayersRemaining = _lastTournamentCount,
+                Tournament = _lastMatchType == MatchType.Tournament,
+                TournamentPlayersRemaining = _bracketCount,
 
                 WinningPlayer = winningPlayer,
                 SaltBalanceChange = DataExtractor.GetSaltBalanceNum() - MatchInformation.SaltBeforeMatch,
-            };
-
+            };            
 
             //If last match was bet on
             if (MatchInformation.HasPlacedBet)
@@ -201,10 +239,24 @@ namespace ChromiumConsole
                         matchEndEventArgs.LoosingPlayerName = MatchInformation.currentRedPlayer;
                     }
                 }
-            }                        
-            
-            OnMatchEnd(matchEndEventArgs);
-            
+            }
+
+            switch (_lastMatchType)
+            {
+                case MatchType.Tournament:
+                    OnTournamentMatchEnd(matchEndEventArgs);
+                    break;
+
+                case MatchType.Exhibition:
+                    OnExhibitionMatchEnded(matchEndEventArgs);
+                    break;
+
+                case MatchType.Matchmaking:
+                    OnMatchEnd(matchEndEventArgs);
+                    break;
+            }
+
+                        
             MatchInformation.statsBeenUpdated = false;
             MatchInformation.HasPlacedBet = false;
             MatchInformation.HasOfferedBet = false;
@@ -213,6 +265,67 @@ namespace ChromiumConsole
         private void SaltyStateMachine_StateClosed(object sender, EventArgs e)
         {
             MatchInformation.statsBeenUpdated = true;
+        }
+
+        private void SaltyStateMachine_StateClosedInformation(object sender, EventArgs e)
+        {
+            var footerText = DataExtractor.GetFooterText();
+            
+            if (footerText == "Tournament mode will be activated after the next match!")
+            {
+                _nextMatchType = MatchType.Tournament;
+                return;
+            }
+
+            if (footerText == "FINAL ROUND! Stay tuned for exhibitions after the tournament")
+            {
+                _nextMatchType = MatchType.Exhibition;
+                _bracketCount = 2;
+                return;
+            }
+
+            if (footerText == "Exhibition mode start!")
+            {
+                _nextMatchType = MatchType.Exhibition;
+                return;
+            }
+            
+            if (footerText == "Matchmaking mode will be activated after the next exhibition match!")
+            {
+                _nextMatchType = MatchType.Matchmaking;
+                return;
+            }
+
+            var tournamentRegex = @"(\d+) characters are left in the bracket!";
+            var tournamentMatch = Regex.Match(footerText, tournamentRegex);
+            if (tournamentMatch.Success)
+            {
+                var particpantsString = tournamentMatch.Groups[1].ToString();
+
+                int count;
+                int.TryParse(particpantsString, out count);
+
+
+                _bracketCount = count;
+                _nextMatchType = MatchType.Tournament;
+                return;
+            }
+
+            var exhibitionRegex = @"\d+ exhibition matches left!";
+            var exhibitionMatch = Regex.Match(footerText, exhibitionRegex);
+            if (exhibitionMatch.Success)
+            {
+                _nextMatchType = MatchType.Exhibition;
+                return;
+            }
+
+            var matchMakingRegex = @"\d+ exhibition matches left!";
+            var matchMakingMatch = Regex.Match(footerText, matchMakingRegex);
+            if (matchMakingMatch.Success)
+            {
+                _nextMatchType = MatchType.Matchmaking;
+                return;
+            }
         }
 
         private void Browser_LoadingStateChanged(object sender, LoadingStateChangedEventArgs e)
@@ -238,33 +351,6 @@ namespace ChromiumConsole
 
         private void Refresh()
         {
-            if (DataExtractor.GetBetState() == "locked" && !_checkedTournament)
-            {
-                _checkedTournament = true;
-
-                var isTournament = DataExtractor.GetTournamentActive();
-                var bracketCount = DataExtractor.GetBracketCount();
-
-                if (isTournament && !_lastMatchWasTournament)
-                {
-                    //its a tournament now, offer a new bet;
-                    var matchStartEventArgs = new MatchStartEventArgs
-                    {
-                        Salt = DataExtractor.GetSaltBalanceNum(),
-                        BluePlayer = MatchInformation.currentBluePlayer,
-                        RedPlayer = MatchInformation.currentRedPlayer,
-
-                        Tournament = true,
-                        TournamentPlayersRemaining = bracketCount,
-                    };
-
-                    OnMatchStart(matchStartEventArgs);
-                }
-
-                _lastMatchWasTournament = isTournament;
-                _lastTournamentCount = bracketCount;
-            }
-
             saltyStateMachine.RefreshState();
             MatchInformation.UpdateFighterData();
                             
@@ -272,28 +358,36 @@ namespace ChromiumConsole
             {
                 MatchInformation.UpdateData();
 
-                if (_lastMatchWasTournament && _lastTournamentCount > 1)
-                {
-                    _lastTournamentCount--;
-                }
-
-                if (_lastTournamentCount <= 1)
-                {
-                    _lastMatchWasTournament = false;
-                }
-
-
                 var matchStartEventArgs = new MatchStartEventArgs
                 {
                     Salt = DataExtractor.GetSaltBalanceNum(),
                     BluePlayer = MatchInformation.currentBluePlayer,
                     RedPlayer = MatchInformation.currentRedPlayer,
 
-                    Tournament = _lastMatchWasTournament,
-                    TournamentPlayersRemaining = _lastTournamentCount,
+                    Tournament = _lastMatchType == MatchType.Tournament,
+                    TournamentPlayersRemaining = _bracketCount,
                 };
 
-                OnMatchStart(matchStartEventArgs);
+                if (_lastMatchType == MatchType.Tournament && _nextMatchType != MatchType.Tournament)
+                {
+                    OnTournamentMatchEnd(new EventArgs());    
+                }
+
+                switch (_nextMatchType)
+                {
+                    case MatchType.Tournament:
+                        OnTournamentMatchStart(matchStartEventArgs);
+                        break;
+
+                    case MatchType.Exhibition:
+                        OnExhibitionMatchStart(matchStartEventArgs);
+                        break;
+
+                    case MatchType.Matchmaking:
+                        OnMatchStart(matchStartEventArgs);
+                        break;
+                }
+                
                 MatchInformation.HasOfferedBet = true;
             }
             

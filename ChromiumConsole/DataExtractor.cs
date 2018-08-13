@@ -67,6 +67,11 @@ namespace ChromiumConsole
             return JavaScriptService.EvaluateJS("lastWager", frontPageBrowser);
         }
 
+        public static string GetFooterText()
+        {
+            return JavaScriptService.EvaluateJS("$(\"#footer-alert\").text()", frontPageBrowser);
+        }
+
         public static bool GetTournamentActive()
         {
             var result =  JavaScriptService.EvaluateJS("$(\"html body div#wrapper.locked div#bottomcontent form#fightcard div#balancewrapper span#tournament-note\").text()", frontPageBrowser);

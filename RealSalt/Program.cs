@@ -22,9 +22,7 @@ namespace RealSalt
         private static IBettingEngine _bettingEngine;
         private static IBettingEngine _tournamentBettingEngine;
         private static IBettingEngine _bettingEngineBackup;
-
-        private static bool _lastMatchWasTournament;
-
+        
         #region MyRegion
         // Declare the SetConsoleCtrlHandler function
         // as external and receiving a delegate.
@@ -75,11 +73,17 @@ namespace RealSalt
 
             _saltyBetConsole.LoginSuccess += SaltyBetConsoleOnLoginSuccess;
             _saltyBetConsole.MatchStart += ConsoleOnMatchStart;
-            _saltyBetConsole.MatchEnded += SaltyBetConsoleOnMatchEnded;
+            _saltyBetConsole.MatchEnded += ConsoleOnMatchEnded;
+
+            _saltyBetConsole.TournamentMatchStart += ConsoleOnTournamentMatchStart;
+            _saltyBetConsole.TournamentMatchEnded += ConsoleOnTournamentMatchEnded;
+            _saltyBetConsole.TournamentEnded += SaltyBetConsoleOnTournamentEnded;
+            
+            _saltyBetConsole.ExhibitionMatchStart += SaltyBetConsoleOnExhibitionMatchStart;
+            _saltyBetConsole.ExhibitionMatchEnded += SaltyBetConsoleOnExhibitionMatchEnded;
 
             _saltyBetConsole.Start(_saltyConfiguration.SaltyAccount, _saltyConfiguration.SaltyAccountPassword);
         }
-
 
         private static void LoadConfig()
         {
@@ -112,10 +116,6 @@ namespace RealSalt
         private static void ConsoleOnMatchStart(object sender, EventArgs eventArgs)
         {            
             var matchStartArgs = (MatchStartEventArgs) eventArgs;
-                    
-            int betSalt;
-            SaltyConsole.Players betCharacter;
-            string betSymbol;
 
             //Don't try to bet on matches already in progress
             if (matchStartArgs.RedPlayer == "null" ||
@@ -131,23 +131,8 @@ namespace RealSalt
                 _sessionResults.StartingSalt = matchStartArgs.Salt;
             }
 
-            Tuple<string, int, SaltyConsole.Players> betPlan;
-
-            if (matchStartArgs.Tournament)
-            {
-                //For Tournaments
-
-                if (!_lastMatchWasTournament)
-                {
-                    _tournamentResults = new SessionResults {StartingSalt = matchStartArgs.Salt};
-                }
-                betPlan = _tournamentBettingEngine.PlaceBet(matchStartArgs);
-            }
-            else
-            {
-                //Regular betting engine
-                betPlan = _bettingEngine.PlaceBet(matchStartArgs);
-            }
+            //Regular betting engine
+            var betPlan = _bettingEngine.PlaceBet(matchStartArgs);
                         
             //In case no bet was placed, fallback to random
             if (betPlan.Item3 == SaltyConsole.Players.Unknown)
@@ -155,36 +140,19 @@ namespace RealSalt
                 betPlan = _bettingEngineBackup.PlaceBet(matchStartArgs);
             }
 
-            betCharacter = betPlan.Item3;
-            betSalt = betPlan.Item2;
-            betSymbol = betPlan.Item1;
+            var betCharacter = betPlan.Item3;
+            var betSalt = betPlan.Item2;
+            var betSymbol = betPlan.Item1;
 
             //Place and report bet.
             _saltyBetConsole.PlaceBet(betCharacter,betSalt);
 
-            var betCharacterName = "Unknown";
-            if (betCharacter == SaltyConsole.Players.BluePlayer)
-            {
-                betCharacterName = matchStartArgs.BluePlayer;
-            }
-            else
-            {
-                betCharacterName = matchStartArgs.RedPlayer;
-            }
+            var betCharacterName = betCharacter == SaltyConsole.Players.BluePlayer ? matchStartArgs.BluePlayer : matchStartArgs.RedPlayer;
 
             var bluePlayer = _forbiddingManse.GetOrCreateCharacter(matchStartArgs.BluePlayer);
             var redPlayer = _forbiddingManse.GetOrCreateCharacter(matchStartArgs.RedPlayer);
-
-            var reportString =
-                "Match Start: [{BetSymbol}] {RedPlayer}({RedStats}) vs {BluePlayer}({BlueStats}). Betting {SaltAmount}$ on {BetPlayer}.";
-
-            if (matchStartArgs.Tournament)
-            {
-                reportString =
-                    "Tournament Match Start: [{BetSymbol}] {RedPlayer}({RedStats}) vs {BluePlayer}({BlueStats}). Betting {SaltAmount}$ on {BetPlayer}.";
-            }
-
-            Log.Information(reportString,
+            
+            Log.Information("Match Start: [{BetSymbol}] {RedPlayer}({RedStats}) vs {BluePlayer}({BlueStats}). Betting {SaltAmount}$ on {BetPlayer}.",
                 betSymbol,
                 matchStartArgs.RedPlayer,
                 redPlayer.ToString(),
@@ -194,36 +162,64 @@ namespace RealSalt
                 betCharacterName);
         }
 
-        private static void SaltyBetConsoleOnMatchEnded(object sender, EventArgs eventArgs)
+        private static void ConsoleOnTournamentMatchStart(object sender, EventArgs eventArgs)
         {
-            var matchEndArgs = (MatchEndEventArgs) eventArgs;
+            var matchStartArgs = (MatchStartEventArgs)eventArgs;
 
-            if (matchEndArgs.Tournament)
+            //Don't try to bet on matches already in progress
+            if (matchStartArgs.RedPlayer == "null" ||
+                matchStartArgs.BluePlayer == "null")
             {
-                TournamentMatchEnded(matchEndArgs);
-
-                //Report total tournament results at the end of the tournament
-                if (matchEndArgs.TournamentPlayersRemaining <= 2)
-                {
-                    Log.Information("Tournament Results: ");
-
-                    _tournamentResults.DisplayResult();
-                    Console.WriteLine("");
-                }
-
+                Log.Information("Match already in progress.");
                 return;
             }
 
-            MatchEnded(matchEndArgs);            
-        }
-
-        private static void MatchEnded(MatchEndEventArgs matchEndArgs)
-        {
-            if (_lastMatchWasTournament)
+            //Store some session information
+            if (_sessionResults.StartingSalt == 0)
             {
-                //Zero out the balance change if we are coming from a tournament match
-                matchEndArgs.SaltBalanceChange = 0;
+                _sessionResults.StartingSalt = matchStartArgs.Salt;
             }
+
+            if (_tournamentResults.StartingSalt == 0)
+            {
+                _tournamentResults.StartingSalt = matchStartArgs.Salt;
+            }
+
+            //For Tournaments
+            var betPlan = _tournamentBettingEngine.PlaceBet(matchStartArgs);
+
+            //In case no bet was placed, fallback to random
+            if (betPlan.Item3 == SaltyConsole.Players.Unknown)
+            {
+                betPlan = _bettingEngineBackup.PlaceBet(matchStartArgs);
+            }
+
+            var betCharacter = betPlan.Item3;
+            var betSalt = betPlan.Item2;
+            var betSymbol = betPlan.Item1;
+
+            //Place and report bet.
+            _saltyBetConsole.PlaceBet(betCharacter, betSalt);
+
+            var betCharacterName = betCharacter == SaltyConsole.Players.BluePlayer ? matchStartArgs.BluePlayer : matchStartArgs.RedPlayer;
+
+            var bluePlayer = _forbiddingManse.GetOrCreateCharacter(matchStartArgs.BluePlayer);
+            var redPlayer = _forbiddingManse.GetOrCreateCharacter(matchStartArgs.RedPlayer);
+
+
+            Log.Information("Tournament Match Start: [{BetSymbol}] {RedPlayer}({RedStats}) vs {BluePlayer}({BlueStats}). Betting {SaltAmount}$ on {BetPlayer}.",
+                betSymbol,
+                matchStartArgs.RedPlayer,
+                redPlayer.ToString(),
+                matchStartArgs.BluePlayer,
+                bluePlayer.ToString(),
+                betSalt,
+                betCharacterName);
+        }
+        
+        private static void ConsoleOnMatchEnded(object sender, EventArgs eventArgs)
+        {
+            var matchEndArgs = (MatchEndEventArgs) eventArgs;
 
             if (matchEndArgs.WinningPlayer == SaltyConsole.Players.Unknown ||
                 matchEndArgs.RedPlayer == "null" ||
@@ -262,19 +258,13 @@ namespace RealSalt
                 balanceSymbol,
                 matchEndArgs.SaltBalanceChange);
 
-            _lastMatchWasTournament = false;
-
             _forbiddingManse.RegisterMatchResult(matchEndArgs.WinningPlayerName, matchEndArgs.LoosingPlayerName);
         }
 
-        private static void TournamentMatchEnded(MatchEndEventArgs matchEndArgs)
+        private static void ConsoleOnTournamentMatchEnded(object sender, EventArgs eventArgs)
         {
-            if (!_lastMatchWasTournament)
-            {
-                //Zero out the balance change if we are coming from a non tournament match
-                matchEndArgs.SaltBalanceChange = 0;
-            }
-            
+            var matchEndArgs = (MatchEndEventArgs)eventArgs;
+
             if (matchEndArgs.WinningPlayer == SaltyConsole.Players.Unknown ||
                 matchEndArgs.RedPlayer == "null" ||
                 matchEndArgs.BluePlayer == "null")
@@ -312,9 +302,105 @@ namespace RealSalt
                 balanceSymbol,
                 matchEndArgs.SaltBalanceChange);
 
-            _lastMatchWasTournament = true;
-
             _forbiddingManse.RegisterMatchResult(matchEndArgs.WinningPlayerName, matchEndArgs.LoosingPlayerName);
+
+        }
+
+        private static void SaltyBetConsoleOnExhibitionMatchStart(object sender, EventArgs eventArgs)
+        {
+            var matchStartArgs = (MatchStartEventArgs)eventArgs;
+
+            //Don't try to bet on matches already in progress
+            if (matchStartArgs.RedPlayer == "null" ||
+                matchStartArgs.BluePlayer == "null")
+            {
+                Log.Information("Exhibition match already in progress.");
+                return;
+            }
+
+            //Store some session information
+            if (_sessionResults.StartingSalt == 0)
+            {
+                _sessionResults.StartingSalt = matchStartArgs.Salt;
+            }
+
+            //Regular betting engine
+            var betPlan = _bettingEngine.PlaceBet(matchStartArgs);
+
+            //In case no bet was placed, fallback to random
+            if (betPlan.Item3 == SaltyConsole.Players.Unknown)
+            {
+                betPlan = _bettingEngineBackup.PlaceBet(matchStartArgs);
+            }
+
+            var betCharacter = betPlan.Item3;
+            var betSalt = betPlan.Item2;
+            var betSymbol = betPlan.Item1;
+
+            //Exhibitions are garbage, only bet half of normal
+            _saltyBetConsole.PlaceBet(betCharacter, betSalt / 2);
+
+            var betCharacterName = betCharacter == SaltyConsole.Players.BluePlayer ? matchStartArgs.BluePlayer : matchStartArgs.RedPlayer;
+
+            var bluePlayer = _forbiddingManse.GetOrCreateCharacter(matchStartArgs.BluePlayer);
+            var redPlayer = _forbiddingManse.GetOrCreateCharacter(matchStartArgs.RedPlayer);
+
+            Log.Information("Exhibition Match Start: [{BetSymbol}] {RedPlayer}({RedStats}) vs {BluePlayer}({BlueStats}). Betting {SaltAmount}$ on {BetPlayer}.",
+                betSymbol,
+                matchStartArgs.RedPlayer,
+                redPlayer.ToString(),
+                matchStartArgs.BluePlayer,
+                bluePlayer.ToString(),
+                betSalt,
+                betCharacterName);
+        }
+
+        private static void SaltyBetConsoleOnExhibitionMatchEnded(object sender, EventArgs eventArgs)
+        {
+            var matchEndArgs = (MatchEndEventArgs)eventArgs;
+
+            if (matchEndArgs.WinningPlayer == SaltyConsole.Players.Unknown ||
+                matchEndArgs.RedPlayer == "null" ||
+                matchEndArgs.BluePlayer == "null")
+            {
+                Log.Information("Unmonitored exhibition match has completed.");
+                return;
+            }
+
+            var balanceSymbol = "";
+            var resultSymbol = " ";
+            if (matchEndArgs.SaltBalanceChange > 0)
+            {
+                balanceSymbol = "+";
+                resultSymbol = "W";
+            }
+            else if (matchEndArgs.SaltBalanceChange < 0)
+            {
+                resultSymbol = "L";
+            }
+
+            _sessionResults.CurrentSalt = matchEndArgs.Salt;
+            if (matchEndArgs.PickedPlayerName == matchEndArgs.WinningPlayerName)
+            {
+                _sessionResults.Wins++;
+            }
+            else
+            {
+                _sessionResults.Losses++;
+            }
+
+            Log.Information("Exhibition Match Ended: [{ResultSymbol}] {WinningPlayer} won. Balance {Salt}[{BalanceSymbol}{SaltDifference}].",
+                resultSymbol,
+                matchEndArgs.WinningPlayerName,
+                matchEndArgs.Salt,
+                balanceSymbol,
+                matchEndArgs.SaltBalanceChange);
+        }
+
+        private static void SaltyBetConsoleOnTournamentEnded(object sender, EventArgs eventArgs)
+        {
+            _tournamentResults.DisplayResult();
+            _tournamentResults = new SessionResults();
         }
     }
 }
