@@ -269,11 +269,14 @@ namespace ChromiumConsole
 
         private void SaltyStateMachine_StateClosedInformation(object sender, EventArgs e)
         {
+            _lastMatchType = _nextMatchType;
+
             var footerText = DataExtractor.GetFooterText();
             
             if (footerText == "Tournament mode will be activated after the next match!")
             {
                 _nextMatchType = MatchType.Tournament;
+                _bracketCount = 16;
                 return;
             }
 
@@ -326,6 +329,8 @@ namespace ChromiumConsole
                 _nextMatchType = MatchType.Matchmaking;
                 return;
             }
+
+            _nextMatchType = MatchType.Matchmaking;            
         }
 
         private void Browser_LoadingStateChanged(object sender, LoadingStateChangedEventArgs e)
