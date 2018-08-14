@@ -370,7 +370,7 @@ namespace ChromiumConsole
 
                 if (_lastMatchType == MatchType.Tournament && _nextMatchType != MatchType.Tournament)
                 {
-                    OnTournamentMatchEnd(new EventArgs());    
+                    OnTournamentEnded(new EventArgs());    
                 }
 
                 switch (_nextMatchType)
