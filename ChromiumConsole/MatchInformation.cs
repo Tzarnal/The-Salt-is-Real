@@ -3,9 +3,14 @@
     class MatchInformation
     {
         public static string currentBettedPlayer;
-
+        public static string winningplayer;
         public static string currentRedPlayer;
         public static string currentBluePlayer;
+
+        public static string Tier;
+
+        public static int BlueSalt;
+        public static int RedSalt;
 
         public static int SaltBeforeMatch;
         public static int SaltBettedOnMatch;

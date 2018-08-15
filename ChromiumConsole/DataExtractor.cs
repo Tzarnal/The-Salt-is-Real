@@ -72,6 +72,13 @@ namespace ChromiumConsole
             return JavaScriptService.EvaluateJS("$(\"#footer-alert\").text()", frontPageBrowser);
         }
 
+        public static int GetPayout()
+        {
+            var payout = JavaScriptService.EvaluateJS("payout", frontPageBrowser);
+
+            return int.TryParse(payout, out var count) ? count : 0;
+        }
+
         public static bool GetTournamentActive()
         {
             var result =  JavaScriptService.EvaluateJS("$(\"html body div#wrapper.locked div#bottomcontent form#fightcard div#balancewrapper span#tournament-note\").text()", frontPageBrowser);
@@ -88,9 +95,7 @@ namespace ChromiumConsole
 
             var chars = countText.Substring(0,2).Trim();
 
-            short count;
-
-            return Int16.TryParse(chars, out count) ? count : 0;
+            return int.TryParse(chars, out var count) ? count : 0;
         }
     }
 }

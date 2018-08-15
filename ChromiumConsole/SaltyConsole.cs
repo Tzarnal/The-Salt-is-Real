@@ -5,7 +5,7 @@ using CefSharp.OffScreen;
 using System.IO;
 using System.Text.RegularExpressions;
 using ChromiumConsole.EventArguments;
-
+using ChatParser;
 
 namespace ChromiumConsole
 {
@@ -26,6 +26,8 @@ namespace ChromiumConsole
         }
 
         public event EventHandler LoginSuccess;
+        public event EventHandler TwitchLoginSuccess;
+
         public event EventHandler MatchStart;
         public event EventHandler MatchEnded;
 
@@ -35,6 +37,8 @@ namespace ChromiumConsole
 
         public event EventHandler ExhibitionMatchStart;
         public event EventHandler ExhibitionMatchEnded;
+        
+        private static SaltChatParser _chat;
 
         public static ChromiumWebBrowser frontPageBrowser;
         public static bool refreshLoopInitiated = false;
@@ -43,22 +47,34 @@ namespace ChromiumConsole
 
         private string _saltyAccount;
         private string _saltyPassword;
-        
+
+        private string _twitchAccount;
+        private string _twitchToken;
+
         private static int _bracketCount = 0;
 
         private static MatchType _nextMatchType;
         private static MatchType _lastMatchType;
 
         static LoginService loginService;
-        static Thread refreshThread;
+
+        private static Thread refreshThread;
+        private static Thread _chatThread;
 
         static SaltyStateMachine saltyStateMachine;
        
-        public void Start(string account, string password)
+        public void Start(string saltyAccount, string saltyPassword, string twitchAccount, string twitchToken)
         {
-            _saltyAccount = account;
-            _saltyPassword = password;
+            _saltyAccount = saltyAccount;
+            _saltyPassword = saltyPassword;
+
+            _twitchAccount = twitchAccount;
+            _twitchToken = twitchToken;
             
+            _chat = new SaltChatParser(_twitchAccount, _twitchToken);
+            _chat.Connected += ChatOnConnected;
+            _chat.WaifuMessage += ChatOnWaifuMessage;
+
             InitializeServices();
             
             while (!exit)
@@ -102,10 +118,15 @@ namespace ChromiumConsole
             MatchInformation.HasPlacedBet = true;
 
         }
-
+        
         protected virtual void OnLoginSuccess(EventArgs e)
         {
             LoginSuccess?.Invoke(this, e);
+        }
+
+        protected virtual void OnTwitchLoginSuccess(EventArgs e)
+        {
+            TwitchLoginSuccess?.Invoke(this, e);
         }
 
         protected virtual void OnMatchStart(EventArgs e)
@@ -146,12 +167,19 @@ namespace ChromiumConsole
         private static void ShutDownServices()
         {
             refreshThread.Abort();
+
+            _chat.Exit = true;
+            _chatThread.Abort();
+
             Cef.Shutdown();
         }
 
         private void InitializeServices()
         {
             refreshThread = new Thread(RefreshLoop);
+            
+            _chatThread = new Thread(_chat.Run);
+            _chatThread.Start();
 
             var settings = new CefSettings()
             {
@@ -178,85 +206,7 @@ namespace ChromiumConsole
 
         
         private void SaltyStateMachine_StateOpenend(object sender, EventArgs e)
-        {
-            var winningPlayer = Players.Unknown;
-            var matchEndEventArgs = new MatchEndEventArgs
-            {
-                Salt = DataExtractor.GetSaltBalanceNum(),
-                BluePlayer = MatchInformation.currentBluePlayer,
-                RedPlayer = MatchInformation.currentRedPlayer,
-
-                Tournament = _lastMatchType == MatchType.Tournament,
-                TournamentPlayersRemaining = _bracketCount,
-
-                WinningPlayer = winningPlayer,
-                SaltBalanceChange = DataExtractor.GetSaltBalanceNum() - MatchInformation.SaltBeforeMatch,
-            };            
-
-            //If last match was bet on
-            if (MatchInformation.HasPlacedBet)
-            {
-                matchEndEventArgs.PickedPlayerName = MatchInformation.currentBettedPlayer;
-
-                MatchInformation.UpdateMatchEarnings();
-
-                var pickedPlayerWon = (MatchInformation.SaltBeforeMatch < PlayerInformation.SaltAmount);
-                var pickedPlayer = Players.RedPlayer;
-
-                if (MatchInformation.currentBettedPlayer == MatchInformation.currentBluePlayer)
-                {
-                    pickedPlayer = Players.BluePlayer;
-                }
-
-                if (pickedPlayerWon)
-                {
-                    if (pickedPlayer == Players.BluePlayer)
-                    {
-                        matchEndEventArgs.WinningPlayer = Players.BluePlayer;
-                        matchEndEventArgs.WinningPlayerName = MatchInformation.currentBluePlayer;
-                        matchEndEventArgs.LoosingPlayerName = MatchInformation.currentRedPlayer;
-
-                    }
-                    else
-                    {
-                        matchEndEventArgs.WinningPlayer = Players.RedPlayer;
-                        matchEndEventArgs.WinningPlayerName = MatchInformation.currentRedPlayer;
-                        matchEndEventArgs.LoosingPlayerName = MatchInformation.currentBluePlayer;
-                    }
-                }
-                else
-                {
-                    if (pickedPlayer == Players.BluePlayer)
-                    {
-                        matchEndEventArgs.WinningPlayer = Players.RedPlayer;
-                        matchEndEventArgs.WinningPlayerName = MatchInformation.currentRedPlayer;
-                        matchEndEventArgs.LoosingPlayerName = MatchInformation.currentBluePlayer;
-                    }
-                    else
-                    {
-                        matchEndEventArgs.WinningPlayer = Players.BluePlayer;
-                        matchEndEventArgs.WinningPlayerName = MatchInformation.currentBluePlayer;
-                        matchEndEventArgs.LoosingPlayerName = MatchInformation.currentRedPlayer;
-                    }
-                }
-            }
-
-            switch (_lastMatchType)
-            {
-                case MatchType.Tournament:
-                    OnTournamentMatchEnd(matchEndEventArgs);
-                    break;
-
-                case MatchType.Exhibition:
-                    OnExhibitionMatchEnded(matchEndEventArgs);
-                    break;
-
-                case MatchType.Matchmaking:
-                    OnMatchEnd(matchEndEventArgs);
-                    break;
-            }
-
-                        
+        {                                   
             MatchInformation.statsBeenUpdated = false;
             MatchInformation.HasPlacedBet = false;
             MatchInformation.HasOfferedBet = false;
@@ -335,6 +285,107 @@ namespace ChromiumConsole
             }
 
             _nextMatchType = MatchType.Matchmaking;
+        }
+
+        private void ChatOnWaifuMessage(object sender, WaifuMessageEventArgs e)
+        {
+            var openRegex = @"Bets are OPEN for .+ \((.+) Tier\)";
+            var openMatch = Regex.Match(e.Message, openRegex);
+            if (openMatch.Success)
+            {
+                var tier = openMatch.Groups[1].ToString();
+                MatchInformation.Tier = tier;
+                return;
+            }
+
+            var lockedRegex = @"Bets are locked..+\$([\d,]+),.+\$([\d,]+)";
+            var lockedMatch = Regex.Match(e.Message, lockedRegex);
+            if (lockedMatch.Success)
+            {
+                var redBet = lockedMatch.Groups[1].ToString().Replace(",", ""); 
+                var blueBet = lockedMatch.Groups[2].ToString().Replace(",", "");
+
+                int.TryParse(redBet, out var redSalt);
+                int.TryParse(blueBet, out var blueSalt);
+
+                MatchInformation.RedSalt = redSalt;
+                MatchInformation.BlueSalt = blueSalt;
+                return;
+            }
+
+            var winRegex = @"(.+) wins! Payouts to ";
+            var winMatch = Regex.Match(e.Message, winRegex);
+            if (winMatch.Success)
+            {
+                var winner = winMatch.Groups[1].ToString();
+                MatchInformation.winningplayer = winner;
+                MatchFinished();
+            }
+        }
+
+        private void MatchFinished()
+        {
+            Players winningPlayer;
+            var winningPlayerName = MatchInformation.winningplayer;
+
+            int balanceChange;
+            int salt = MatchInformation.SaltBeforeMatch;
+
+            if (winningPlayerName == MatchInformation.currentBluePlayer)
+            {
+                winningPlayer = Players.BluePlayer;
+            }
+            else
+            {
+                winningPlayer = Players.RedPlayer;
+            }
+
+            if (winningPlayerName == MatchInformation.currentBettedPlayer)
+            {
+                balanceChange = DataExtractor.GetPayout();
+            }
+            else
+            {
+                balanceChange = MatchInformation.SaltBettedOnMatch * -1;
+            }
+
+            var matchEndEventArgs = new MatchEndEventArgs
+            {
+                BluePlayer = MatchInformation.currentBluePlayer,
+                RedPlayer = MatchInformation.currentRedPlayer,
+
+                Tournament = _lastMatchType == MatchType.Tournament,
+                TournamentPlayersRemaining = _bracketCount,
+
+                WinningPlayer = winningPlayer,
+                WinningPlayerName = winningPlayerName,
+
+                PickedPlayerName = MatchInformation.currentBettedPlayer,
+
+                SaltBalanceChange = balanceChange,
+                Salt = salt + balanceChange,
+
+            };
+           
+            switch (_lastMatchType)
+            {
+                case MatchType.Tournament:
+                    OnTournamentMatchEnd(matchEndEventArgs);
+                    break;
+
+                case MatchType.Exhibition:
+                    OnExhibitionMatchEnded(matchEndEventArgs);
+                    break;
+
+                case MatchType.Matchmaking:
+                    OnMatchEnd(matchEndEventArgs);
+                    break;
+            }
+        }
+
+        private void ChatOnConnected(object sender, EventArgs eventArgs)
+        {
+            OnTwitchLoginSuccess(eventArgs);
         }
 
         private void Browser_LoadingStateChanged(object sender, LoadingStateChangedEventArgs e)

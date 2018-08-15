@@ -2,11 +2,13 @@
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading;
 using ChromiumConsole;
 using ChromiumConsole.EventArguments;
 using RealSalt.Data;
 using RealSalt.BettingEngine;
 using Serilog;
+
 
 namespace RealSalt
 {
@@ -14,8 +16,7 @@ namespace RealSalt
     {
         private static SaltyConsole _saltyBetConsole;
         private static Configuration _saltyConfiguration;
-        public static ForbiddingManse _forbiddingManse;
-
+        
         private static SessionResults _sessionResults;
         private static SessionResults _tournamentResults;
 
@@ -23,6 +24,8 @@ namespace RealSalt
         private static IBettingEngine _tournamentBettingEngine;
         private static IBettingEngine _bettingEngineBackup;
         
+        public static ForbiddingManse _forbiddingManse;
+
         #region MyRegion
         // Declare the SetConsoleCtrlHandler function
         // as external and receiving a delegate.
@@ -82,6 +85,7 @@ namespace RealSalt
                 Log.Error(e, "Problem with the database.");
             }
 
+            
             _saltyBetConsole.LoginSuccess += SaltyBetConsoleOnLoginSuccess;
             _saltyBetConsole.MatchStart += ConsoleOnMatchStart;
             _saltyBetConsole.MatchEnded += ConsoleOnMatchEnded;
@@ -93,7 +97,9 @@ namespace RealSalt
             _saltyBetConsole.ExhibitionMatchStart += SaltyBetConsoleOnExhibitionMatchStart;
             _saltyBetConsole.ExhibitionMatchEnded += SaltyBetConsoleOnExhibitionMatchEnded;
 
-            _saltyBetConsole.Start(_saltyConfiguration.SaltyAccount, _saltyConfiguration.SaltyAccountPassword);
+            _saltyBetConsole.TwitchLoginSuccess += SaltyBetConsoleOnTwitchLoginSuccess;
+
+            _saltyBetConsole.Start(_saltyConfiguration.SaltyAccount, _saltyConfiguration.SaltyAccountPassword, _saltyConfiguration.TwitchAccount, _saltyConfiguration.TwitchToken);
         }
 
         private static void LoadConfig()
@@ -122,6 +128,12 @@ namespace RealSalt
         private static void SaltyBetConsoleOnLoginSuccess(object sender, EventArgs e)
         {           
             Log.Information("Logged in to SaltyBet.");
+        }
+
+
+        private static void SaltyBetConsoleOnTwitchLoginSuccess(object sender, EventArgs eventArgs)
+        {
+            Log.Information("Logged in to Twitch.");
         }
 
         private static void ConsoleOnMatchStart(object sender, EventArgs eventArgs)
@@ -241,25 +253,27 @@ namespace RealSalt
             }
 
             var balanceSymbol = "";
-            var resultSymbol = " ";
+            var resultSymbol = matchEndArgs.WinningPlayerName == matchEndArgs.PickedPlayerName ? "W" : "L";
+
+            if (matchEndArgs.PickedPlayerName != matchEndArgs.BluePlayer &&
+                matchEndArgs.PickedPlayerName != matchEndArgs.RedPlayer)
+            {
+                resultSymbol = " ";
+            }
+
             if (matchEndArgs.SaltBalanceChange > 0)
             {
                 balanceSymbol = "+";
-                resultSymbol = "W";
-            }
-            else if (matchEndArgs.SaltBalanceChange < 0)
-            {
-                resultSymbol = "L";
             }
 
-            _sessionResults.CurrentSalt = matchEndArgs.Salt;
+            _tournamentResults.CurrentSalt = matchEndArgs.Salt;
             if (matchEndArgs.PickedPlayerName == matchEndArgs.WinningPlayerName)
             {
-                _sessionResults.Wins++;
+                _tournamentResults.Wins++;
             }
             else
             {
-                _sessionResults.Losses++;
+                _tournamentResults.Losses++;
             }
 
             Log.Information("Match Ended: [{ResultSymbol}] {WinningPlayer} won. Balance {Salt}[{BalanceSymbol}{SaltDifference}].",
@@ -285,15 +299,17 @@ namespace RealSalt
             }
 
             var balanceSymbol = "";
-            var resultSymbol = " ";
+            var resultSymbol = matchEndArgs.WinningPlayerName == matchEndArgs.PickedPlayerName ? "W" : "L";
+
+            if (matchEndArgs.PickedPlayerName != matchEndArgs.BluePlayer &&
+                matchEndArgs.PickedPlayerName != matchEndArgs.RedPlayer)
+            {
+                resultSymbol = " ";
+            }
+
             if (matchEndArgs.SaltBalanceChange > 0)
             {
                 balanceSymbol = "+";
-                resultSymbol = "W";
-            }
-            else if (matchEndArgs.SaltBalanceChange < 0)
-            {
-                resultSymbol = "L";
             }
 
             _tournamentResults.CurrentSalt = matchEndArgs.Salt;
@@ -381,25 +397,27 @@ namespace RealSalt
             }
 
             var balanceSymbol = "";
-            var resultSymbol = " ";
+            var resultSymbol = matchEndArgs.WinningPlayerName == matchEndArgs.PickedPlayerName ? "W" : "L";
+
+            if (matchEndArgs.PickedPlayerName != matchEndArgs.BluePlayer &&
+                matchEndArgs.PickedPlayerName != matchEndArgs.RedPlayer)
+            {
+                resultSymbol = " ";
+            }
+
             if (matchEndArgs.SaltBalanceChange > 0)
             {
                 balanceSymbol = "+";
-                resultSymbol = "W";
-            }
-            else if (matchEndArgs.SaltBalanceChange < 0)
-            {
-                resultSymbol = "L";
             }
 
-            _sessionResults.CurrentSalt = matchEndArgs.Salt;
+            _tournamentResults.CurrentSalt = matchEndArgs.Salt;
             if (matchEndArgs.PickedPlayerName == matchEndArgs.WinningPlayerName)
             {
-                _sessionResults.Wins++;
+                _tournamentResults.Wins++;
             }
             else
             {
-                _sessionResults.Losses++;
+                _tournamentResults.Losses++;
             }
 
             Log.Information("Exhibition Match Ended: [{ResultSymbol}] {WinningPlayer} won. Balance {Salt}[{BalanceSymbol}{SaltDifference}].",

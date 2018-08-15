@@ -21,9 +21,6 @@ namespace RealSalt.Data
                 WinnerSalt = -1,
                 LoserSalt = -1,
 
-                WinnerBetCount = -1,
-                LoserBetCount = -1,
-
                 Tier = "Unknown",
 
                 MatchStart = DateTime.Now,

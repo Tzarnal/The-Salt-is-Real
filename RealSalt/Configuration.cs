@@ -13,11 +13,15 @@ namespace RealSalt
 
         public string SaltyAccount;
         public string SaltyAccountPassword;
+        public string TwitchAccount;
+        public string TwitchToken;
 
         public Configuration()
         {
             SaltyAccount = "Salty Account Name";
             SaltyAccountPassword = "ASuperSecretPasswordNobodyKnows";
+            TwitchAccount = "Twitch Account Name";
+            TwitchToken = "Don't Tell People About Your Token";
         }
 
         public void Save()

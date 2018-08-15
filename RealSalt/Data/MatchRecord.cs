@@ -20,9 +20,6 @@ namespace RealSalt.Data
         public int WinnerSalt { get; set; }
         public int LoserSalt { get; set; }
 
-        public int WinnerBetCount { get; set; }
-        public int LoserBetCount { get; set; }
-
         public string Tier { get; set; }
 
         public DateTime MatchStart { get; set; }
