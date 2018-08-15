@@ -327,6 +327,10 @@ namespace ChromiumConsole
         {
             Players winningPlayer;
             var winningPlayerName = MatchInformation.winningplayer;
+            string losingPlayerName;
+
+            int winnerSalt;
+            int loserSalt;
 
             int balanceChange;
             int salt = MatchInformation.SaltBeforeMatch;
@@ -334,10 +338,16 @@ namespace ChromiumConsole
             if (winningPlayerName == MatchInformation.currentBluePlayer)
             {
                 winningPlayer = Players.BluePlayer;
+                winnerSalt = MatchInformation.BlueSalt;
+                losingPlayerName = MatchInformation.currentRedPlayer;
+                loserSalt = MatchInformation.RedSalt;
             }
             else
             {
                 winningPlayer = Players.RedPlayer;
+                winnerSalt = MatchInformation.RedSalt;
+                losingPlayerName = MatchInformation.currentBluePlayer;
+                loserSalt = MatchInformation.BlueSalt;
             }
 
             if (winningPlayerName == MatchInformation.currentBettedPlayer)
@@ -359,8 +369,17 @@ namespace ChromiumConsole
 
                 WinningPlayer = winningPlayer,
                 WinningPlayerName = winningPlayerName,
+                LoosingPlayerName = losingPlayerName,
 
                 PickedPlayerName = MatchInformation.currentBettedPlayer,
+
+                Tier = MatchInformation.Tier,
+                
+                WinnerSalt = winnerSalt,
+                LoserSalt = loserSalt,
+
+                MatchStart = MatchInformation.MatchStart,
+                MatchLength = DateTime.Now - MatchInformation.MatchStart,
 
                 SaltBalanceChange = balanceChange,
                 Salt = salt + balanceChange,
@@ -417,6 +436,8 @@ namespace ChromiumConsole
             if (!MatchInformation.HasOfferedBet)
             {
                 MatchInformation.UpdateData();
+                MatchInformation.MatchStart = DateTime.Now;
+                
 
                 var matchStartEventArgs = new MatchStartEventArgs
                 {

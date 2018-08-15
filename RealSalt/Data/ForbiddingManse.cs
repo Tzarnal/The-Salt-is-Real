@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Data.Entity;
 using System.Linq;
+using ChromiumConsole.EventArguments;
 using Serilog;
 using Serilog.Core;
 using Serilog.Formatting.Json;
@@ -42,6 +43,30 @@ namespace RealSalt.Data
 
                 MatchStart = DateTime.Now,
                 MatchLength = TimeSpan.FromSeconds(1),
+
+                MatchType = type,
+            };
+
+            RegisterMatchResult(matchRecord);
+        }
+
+        public void RegisterMatchResult(MatchEndEventArgs matchEndArgs, MatchType type)
+        {
+            var winningCharacter = GetOrCreateCharacter(matchEndArgs.WinningPlayerName);
+            var loosingCharacter = GetOrCreateCharacter(matchEndArgs.LoosingPlayerName);
+
+            var matchRecord = new MatchRecord
+            {
+                WinnerCharacterId = winningCharacter.CharacterId,
+                LoserCharacterId = loosingCharacter.CharacterId,
+
+                WinnerSalt = matchEndArgs.WinnerSalt,
+                LoserSalt = matchEndArgs.LoserSalt,
+
+                Tier = matchEndArgs.Tier,
+
+                MatchStart = matchEndArgs.MatchStart,
+                MatchLength = matchEndArgs.MatchLength,
 
                 MatchType = type,
             };

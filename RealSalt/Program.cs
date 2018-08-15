@@ -283,7 +283,7 @@ namespace RealSalt
                 balanceSymbol,
                 matchEndArgs.SaltBalanceChange);
 
-            _forbiddingManse.RegisterMatchResult(matchEndArgs.WinningPlayerName, matchEndArgs.LoosingPlayerName,MatchType.MatchMaking);
+            _forbiddingManse.RegisterMatchResult(matchEndArgs, MatchType.MatchMaking);
         }
 
         private static void ConsoleOnTournamentMatchEnded(object sender, EventArgs eventArgs)
@@ -329,7 +329,7 @@ namespace RealSalt
                 balanceSymbol,
                 matchEndArgs.SaltBalanceChange);
 
-            _forbiddingManse.RegisterMatchResult(matchEndArgs.WinningPlayerName, matchEndArgs.LoosingPlayerName,MatchType.Tournament);
+            _forbiddingManse.RegisterMatchResult(matchEndArgs, MatchType.Tournament);
 
         }
 
@@ -427,7 +427,7 @@ namespace RealSalt
                 balanceSymbol,
                 matchEndArgs.SaltBalanceChange);
 
-            _forbiddingManse.RegisterMatchResult(matchEndArgs.WinningPlayerName, matchEndArgs.LoosingPlayerName, MatchType.Exhibition);
+            _forbiddingManse.RegisterMatchResult(matchEndArgs, MatchType.Exhibition);
         }
 
         private static void SaltyBetConsoleOnTournamentEnded(object sender, EventArgs eventArgs)

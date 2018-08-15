@@ -1,4 +1,6 @@
-﻿namespace ChromiumConsole
+﻿using System;
+
+namespace ChromiumConsole
 {
     class MatchInformation
     {
@@ -23,6 +25,8 @@
 
         public static bool Tournament = false;
         public static int BracketCount;
+
+        public static DateTime MatchStart;
 
         public static void UpdateFighterData()
         {
