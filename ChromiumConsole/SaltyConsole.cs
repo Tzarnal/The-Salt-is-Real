@@ -279,11 +279,17 @@ namespace ChromiumConsole
                 _bracketCount = 16;
                 return;
             }
-
+            
             if (footerText == "FINAL ROUND! Stay tuned for exhibitions after the tournament")
             {
                 _nextMatchType = MatchType.Exhibition;
                 _bracketCount = 2;
+                return;
+            }
+
+            if (footerText == "Tournament mode start!")
+            {
+                _nextMatchType = MatchType.Tournament;
                 return;
             }
 
@@ -326,7 +332,9 @@ namespace ChromiumConsole
             {
                 _nextMatchType = MatchType.Matchmaking;
                 return;
-            }         
+            }
+
+            _nextMatchType = MatchType.Matchmaking;
         }
 
         private void Browser_LoadingStateChanged(object sender, LoadingStateChangedEventArgs e)
