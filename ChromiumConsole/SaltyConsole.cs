@@ -320,15 +320,13 @@ namespace ChromiumConsole
                 return;
             }
 
-            var matchMakingRegex = @"\d+ exhibition matches left!";
+            var matchMakingRegex = @"\d+ more matches until the next tournament!";
             var matchMakingMatch = Regex.Match(footerText, matchMakingRegex);
             if (matchMakingMatch.Success)
             {
                 _nextMatchType = MatchType.Matchmaking;
                 return;
-            }
-
-            _nextMatchType = MatchType.Matchmaking;            
+            }         
         }
 
         private void Browser_LoadingStateChanged(object sender, LoadingStateChangedEventArgs e)
