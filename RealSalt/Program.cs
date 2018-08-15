@@ -338,7 +338,9 @@ namespace RealSalt
             var betSymbol = betPlan.Item1;
 
             //Exhibitions are garbage, only bet half of normal
-            _saltyBetConsole.PlaceBet(betCharacter, betSalt / 2);
+            betSalt = (int) (betSalt * 0.5);
+
+            _saltyBetConsole.PlaceBet(betCharacter, betSalt);
 
             var betCharacterName = betCharacter == SaltyConsole.Players.BluePlayer ? matchStartArgs.BluePlayer : matchStartArgs.RedPlayer;
 
