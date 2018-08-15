@@ -305,9 +305,7 @@ namespace ChromiumConsole
             {
                 var particpantsString = tournamentMatch.Groups[1].ToString();
 
-                int count;
-                int.TryParse(particpantsString, out count);
-
+                int.TryParse(particpantsString, out var count);
 
                 _bracketCount = count;
                 _nextMatchType = MatchType.Tournament;
