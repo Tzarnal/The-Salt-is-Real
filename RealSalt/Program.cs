@@ -14,7 +14,7 @@ namespace RealSalt
     {
         private static SaltyConsole _saltyBetConsole;
         private static Configuration _saltyConfiguration;
-        private static ForbiddingManse _forbiddingManse;
+        public static ForbiddingManse _forbiddingManse;
 
         private static SessionResults _sessionResults;
         private static SessionResults _tournamentResults;
@@ -68,8 +68,19 @@ namespace RealSalt
             _tournamentBettingEngine = new TournamentBet(_forbiddingManse);
             _bettingEngineBackup = new RandomBet();
 
-            Log.Information("Database contains {CharacterCount} Characters.",
-                +_forbiddingManse.Characters.Count());
+            try
+            {
+                Log.Information("Database contains {CharacterCount} Characters.",
+                    +_forbiddingManse.Characters.Count());
+            }
+            catch (System.Data.Entity.ModelConfiguration.ModelValidationException e)
+            {
+                Log.Warning(e, "Database is empty.");
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "Problem with the database.");
+            }
 
             _saltyBetConsole.LoginSuccess += SaltyBetConsoleOnLoginSuccess;
             _saltyBetConsole.MatchStart += ConsoleOnMatchStart;
@@ -258,7 +269,7 @@ namespace RealSalt
                 balanceSymbol,
                 matchEndArgs.SaltBalanceChange);
 
-            _forbiddingManse.RegisterMatchResult(matchEndArgs.WinningPlayerName, matchEndArgs.LoosingPlayerName);
+            _forbiddingManse.RegisterMatchResult(matchEndArgs.WinningPlayerName, matchEndArgs.LoosingPlayerName,MatchType.MatchMaking);
         }
 
         private static void ConsoleOnTournamentMatchEnded(object sender, EventArgs eventArgs)
@@ -302,7 +313,7 @@ namespace RealSalt
                 balanceSymbol,
                 matchEndArgs.SaltBalanceChange);
 
-            _forbiddingManse.RegisterMatchResult(matchEndArgs.WinningPlayerName, matchEndArgs.LoosingPlayerName);
+            _forbiddingManse.RegisterMatchResult(matchEndArgs.WinningPlayerName, matchEndArgs.LoosingPlayerName,MatchType.Tournament);
 
         }
 
@@ -397,6 +408,8 @@ namespace RealSalt
                 matchEndArgs.Salt,
                 balanceSymbol,
                 matchEndArgs.SaltBalanceChange);
+
+            _forbiddingManse.RegisterMatchResult(matchEndArgs.WinningPlayerName, matchEndArgs.LoosingPlayerName, MatchType.Exhibition);
         }
 
         private static void SaltyBetConsoleOnTournamentEnded(object sender, EventArgs eventArgs)

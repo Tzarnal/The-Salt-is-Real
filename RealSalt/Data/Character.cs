@@ -4,18 +4,18 @@ namespace RealSalt.Data
 {
     public class Character
     {
-        public int Id { get; set; }
+        public int CharacterId { get; set; }
         public string Name { get; set; }
 
-        public int Wins { get; set; }
-        public int Losses { get; set; }
+        public int TotalWins => Program._forbiddingManse.GetWins(this);
+        public int TotalLosses => Program._forbiddingManse.GetLosses(this);
 
-        public int Matches => Wins + Losses;
+        public int Matches => TotalWins + TotalLosses;
         public double WinPercent
         {
             get
             {
-                var percent=  (double) Wins / (double) Matches * 100;
+                var percent=  (double)TotalWins / (double) Matches * 100;
                 return Math.Round(percent, 1);
             }
         }
@@ -26,10 +26,10 @@ namespace RealSalt.Data
         {
             if (Matches == 0)
             {
-                return $"0% {Wins}W-{Losses}L";
+                return $"0% {TotalWins}W-{TotalLosses}L";
             }
 
-            return $"{WinPercent}% {Wins}W-{Losses}L";
+            return $"{WinPercent}% {TotalWins}W-{TotalLosses}L";
         }
     }
 }
