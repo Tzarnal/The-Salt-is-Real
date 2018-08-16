@@ -266,6 +266,7 @@ namespace RealSalt
                 balanceSymbol = "+";
             }
 
+            _sessionResults.CurrentSalt = matchEndArgs.Salt;
             if (matchEndArgs.PickedPlayerName == matchEndArgs.WinningPlayerName)
             {
                 _sessionResults.Wins++;
@@ -410,6 +411,7 @@ namespace RealSalt
                 balanceSymbol = "+";
             }
 
+            _sessionResults.CurrentSalt = matchEndArgs.Salt;
             if (matchEndArgs.PickedPlayerName == matchEndArgs.WinningPlayerName)
             {
                 _sessionResults.Wins++;
