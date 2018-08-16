@@ -32,6 +32,10 @@ namespace ChatParser
 
             while (!Exit)
             {
+                if (!_client.IsConnected)
+                {
+                    _client.Connect();
+                }
                 Thread.Sleep(500);
             }            
         }
