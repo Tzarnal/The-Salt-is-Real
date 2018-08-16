@@ -266,15 +266,15 @@ namespace RealSalt
                 balanceSymbol = "+";
             }
 
-            _tournamentResults.CurrentSalt = matchEndArgs.Salt;
             if (matchEndArgs.PickedPlayerName == matchEndArgs.WinningPlayerName)
             {
-                _tournamentResults.Wins++;
+                _sessionResults.Wins++;
             }
             else
             {
-                _tournamentResults.Losses++;
+                _sessionResults.Losses++;
             }
+
 
             Log.Information("Match Ended: [{ResultSymbol}] {WinningPlayer} won. Balance {Salt}[{BalanceSymbol}{SaltDifference}].",
                 resultSymbol,
@@ -410,14 +410,13 @@ namespace RealSalt
                 balanceSymbol = "+";
             }
 
-            _tournamentResults.CurrentSalt = matchEndArgs.Salt;
             if (matchEndArgs.PickedPlayerName == matchEndArgs.WinningPlayerName)
             {
-                _tournamentResults.Wins++;
+                _sessionResults.Wins++;
             }
             else
             {
-                _tournamentResults.Losses++;
+                _sessionResults.Losses++;
             }
 
             Log.Information("Exhibition Match Ended: [{ResultSymbol}] {WinningPlayer} won. Balance {Salt}[{BalanceSymbol}{SaltDifference}].",
