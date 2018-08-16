@@ -175,7 +175,7 @@ namespace RealSalt
             var bluePlayer = _forbiddingManse.GetOrCreateCharacter(matchStartArgs.BluePlayer);
             var redPlayer = _forbiddingManse.GetOrCreateCharacter(matchStartArgs.RedPlayer);
             
-            Log.Information("Match Start: [{BetSymbol}] {RedPlayer}({RedStats}) vs {BluePlayer}({BlueStats}). Betting {SaltAmount}$ on {BetPlayer}.",
+            Log.Information("Match Start: [{BetSymbol}] {RedPlayer}({RedStats}) vs {BluePlayer}({BlueStats}). Betting {SaltAmount:N0}$ on {BetPlayer}.",
                 betSymbol,
                 matchStartArgs.RedPlayer,
                 redPlayer.ToString(),
@@ -230,7 +230,7 @@ namespace RealSalt
             var redPlayer = _forbiddingManse.GetOrCreateCharacter(matchStartArgs.RedPlayer);
 
 
-            Log.Information("Tournament Match Start: [{BetSymbol}] {RedPlayer}({RedStats}) vs {BluePlayer}({BlueStats}). Betting {SaltAmount}$ on {BetPlayer}.",
+            Log.Information("Tournament Match Start: [{BetSymbol}] {RedPlayer}({RedStats}) vs {BluePlayer}({BlueStats}). Betting {SaltAmount:N0}$ on {BetPlayer}.",
                 betSymbol,
                 matchStartArgs.RedPlayer,
                 redPlayer.ToString(),
@@ -276,7 +276,7 @@ namespace RealSalt
             }
 
 
-            Log.Information("Match Ended: [{ResultSymbol}] {WinningPlayer} won. Balance {Salt}[{BalanceSymbol}{SaltDifference}].",
+            Log.Information("Match Ended: [{ResultSymbol}] {WinningPlayer} won. Balance {Salt:N0}[{BalanceSymbol}{SaltDifference:N0}].",
                 resultSymbol,
                 matchEndArgs.WinningPlayerName,
                 matchEndArgs.Salt,
@@ -322,7 +322,7 @@ namespace RealSalt
                 _tournamentResults.Losses++;
             }
 
-            Log.Information("Tournament Match Ended: [{ResultSymbol}] {WinningPlayer} won. Balance {Salt}[{BalanceSymbol}{SaltDifference}].",
+            Log.Information("Tournament Match Ended: [{ResultSymbol}] {WinningPlayer} won. Balance {Salt:N0}[{BalanceSymbol}{SaltDifference:N0}].",
                 resultSymbol,
                 matchEndArgs.WinningPlayerName,
                 matchEndArgs.Salt,
@@ -374,7 +374,7 @@ namespace RealSalt
             var bluePlayer = _forbiddingManse.GetOrCreateCharacter(matchStartArgs.BluePlayer);
             var redPlayer = _forbiddingManse.GetOrCreateCharacter(matchStartArgs.RedPlayer);
 
-            Log.Information("Exhibition Match Start: [{BetSymbol}] {RedPlayer}({RedStats}) vs {BluePlayer}({BlueStats}). Betting {SaltAmount}$ on {BetPlayer}.",
+            Log.Information("Exhibition Match Start: [{BetSymbol}] {RedPlayer}({RedStats}) vs {BluePlayer}({BlueStats}). Betting {SaltAmount:N0}$ on {BetPlayer}.",
                 betSymbol,
                 matchStartArgs.RedPlayer,
                 redPlayer.ToString(),
@@ -419,7 +419,7 @@ namespace RealSalt
                 _sessionResults.Losses++;
             }
 
-            Log.Information("Exhibition Match Ended: [{ResultSymbol}] {WinningPlayer} won. Balance {Salt}[{BalanceSymbol}{SaltDifference}].",
+            Log.Information("Exhibition Match Ended: [{ResultSymbol}] {WinningPlayer} won. Balance {Salt:N0}[{BalanceSymbol}{SaltDifference:N0}].",
                 resultSymbol,
                 matchEndArgs.WinningPlayerName,
                 matchEndArgs.Salt,

@@ -39,7 +39,7 @@ namespace RealSalt.Data
                 balanceSymbol = "+";
             }
 
-            Log.Information("Placed {TotalMatches} Bets with {Wins}[{WinPercent}%] win(s). Started at ${StartingSalt} with a ${CurrentSalt}[{BalanceSymbol}{BalanceChange}] final balance.",
+            Log.Information("Placed {TotalMatches} Bets with {Wins}[{WinPercent}%] win(s). Started at ${StartingSalt:N0} with a ${CurrentSalt:N0}[{BalanceSymbol}{BalanceChang:N0}] final balance.",
                 Matches,
                 Wins,
                 WinPercent,
