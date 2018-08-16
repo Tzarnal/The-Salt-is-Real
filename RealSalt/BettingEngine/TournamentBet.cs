@@ -88,6 +88,8 @@ namespace RealSalt.BettingEngine
 
         private int BaseBetAmount(int salt, int playersRemaining)
         {
+            int bet = 100;
+
             if (salt < 2000)
             {
                 return salt;
@@ -95,16 +97,25 @@ namespace RealSalt.BettingEngine
 
             if (playersRemaining > 8)
             {
-                return (int)(salt * 0.3);
+                bet = (int)(salt * 0.3);
             }
 
             if (playersRemaining > 2)
             {
-                return (int)(salt * 0.5);
+                bet = (int)(salt * 0.5);
             }
 
+            if (playersRemaining == 2)
+            {
+                bet = (int)(salt * 0.75);
+            }            
 
-            return (int)(salt * 0.75);
+            if (salt - bet < 2000)
+            {
+                return salt;
+            }
+
+            return bet;
         }
     }
 }
