@@ -77,7 +77,7 @@ namespace RealSalt
             _sessionResults = new SessionResults();
             _tournamentResults = new SessionResults();
 
-            _bettingEngine = new WinRateAdjusted();
+            _bettingEngine = new ExpectedProfitBet();
             _tournamentBettingEngine = new TournamentBet(ForbiddingManse);
             _bettingEngineBackup = new RandomBet();
 

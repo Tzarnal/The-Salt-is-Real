@@ -61,6 +61,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BettingEngine\ExpectedProfitBet.cs" />
     <Compile Include="BettingEngine\IBettingEngine.cs" />
     <Compile Include="BettingEngine\RandomBet.cs" />
     <Compile Include="BettingEngine\TournamentBet.cs" />
