@@ -2,7 +2,6 @@
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Threading;
 using ChromiumConsole;
 using ChromiumConsole.EventArguments;
 using RealSalt.Data;
@@ -24,7 +23,7 @@ namespace RealSalt
         private static IBettingEngine _tournamentBettingEngine;
         private static IBettingEngine _bettingEngineBackup;
         
-        public static ForbiddingManse _forbiddingManse;
+        public static ForbiddingManse ForbiddingManse;
 
         #region MyRegion
         // Declare the SetConsoleCtrlHandler function
@@ -62,19 +61,19 @@ namespace RealSalt
             LoadConfig();
 
             _saltyBetConsole = new SaltyConsole();
-            _forbiddingManse = new ForbiddingManse();
+            ForbiddingManse = new ForbiddingManse();
 
             _sessionResults = new SessionResults();
             _tournamentResults = new SessionResults();
 
-            _bettingEngine = new WinRateAdjusted(_forbiddingManse);
-            _tournamentBettingEngine = new TournamentBet(_forbiddingManse);
+            _bettingEngine = new WinRateAdjusted(ForbiddingManse);
+            _tournamentBettingEngine = new TournamentBet(ForbiddingManse);
             _bettingEngineBackup = new RandomBet();
 
             try
             {
                 Log.Information("Database contains {CharacterCount} Characters.",
-                    +_forbiddingManse.Characters.Count());
+                    +ForbiddingManse.Characters.Count());
             }
             catch (System.Data.Entity.ModelConfiguration.ModelValidationException e)
             {
@@ -117,7 +116,7 @@ namespace RealSalt
 
         private static bool ConsoleCtrlCheck(CtrlTypes ctrlType)
         {
-            _forbiddingManse.SaveChanges();
+            ForbiddingManse.SaveChanges();
 
             _sessionResults.DisplayResult();
 
@@ -172,8 +171,8 @@ namespace RealSalt
 
             var betCharacterName = betCharacter == SaltyConsole.Players.BluePlayer ? matchStartArgs.BluePlayer : matchStartArgs.RedPlayer;
 
-            var bluePlayer = _forbiddingManse.GetOrCreateCharacter(matchStartArgs.BluePlayer);
-            var redPlayer = _forbiddingManse.GetOrCreateCharacter(matchStartArgs.RedPlayer);
+            var bluePlayer = ForbiddingManse.GetOrCreateCharacter(matchStartArgs.BluePlayer);
+            var redPlayer = ForbiddingManse.GetOrCreateCharacter(matchStartArgs.RedPlayer);
             
             Log.Information("Match Start: [{BetSymbol}] {RedPlayer}({RedStats}) vs {BluePlayer}({BlueStats}). Betting {SaltAmount:N0}$ on {BetPlayer}.",
                 betSymbol,
@@ -226,8 +225,8 @@ namespace RealSalt
 
             var betCharacterName = betCharacter == SaltyConsole.Players.BluePlayer ? matchStartArgs.BluePlayer : matchStartArgs.RedPlayer;
 
-            var bluePlayer = _forbiddingManse.GetOrCreateCharacter(matchStartArgs.BluePlayer);
-            var redPlayer = _forbiddingManse.GetOrCreateCharacter(matchStartArgs.RedPlayer);
+            var bluePlayer = ForbiddingManse.GetOrCreateCharacter(matchStartArgs.BluePlayer);
+            var redPlayer = ForbiddingManse.GetOrCreateCharacter(matchStartArgs.RedPlayer);
 
 
             Log.Information("Tournament Match Start: [{BetSymbol}] {RedPlayer}({RedStats}) vs {BluePlayer}({BlueStats}). Betting {SaltAmount:N0}$ on {BetPlayer}.",
@@ -284,7 +283,7 @@ namespace RealSalt
                 balanceSymbol,
                 matchEndArgs.SaltBalanceChange);
 
-            _forbiddingManse.RegisterMatchResult(matchEndArgs, MatchType.MatchMaking);
+            ForbiddingManse.RegisterMatchResult(matchEndArgs, MatchType.MatchMaking);
         }
 
         private static void ConsoleOnTournamentMatchEnded(object sender, EventArgs eventArgs)
@@ -330,7 +329,7 @@ namespace RealSalt
                 balanceSymbol,
                 matchEndArgs.SaltBalanceChange);
 
-            _forbiddingManse.RegisterMatchResult(matchEndArgs, MatchType.Tournament);
+            ForbiddingManse.RegisterMatchResult(matchEndArgs, MatchType.Tournament);
 
         }
 
@@ -372,8 +371,8 @@ namespace RealSalt
 
             var betCharacterName = betCharacter == SaltyConsole.Players.BluePlayer ? matchStartArgs.BluePlayer : matchStartArgs.RedPlayer;
 
-            var bluePlayer = _forbiddingManse.GetOrCreateCharacter(matchStartArgs.BluePlayer);
-            var redPlayer = _forbiddingManse.GetOrCreateCharacter(matchStartArgs.RedPlayer);
+            var bluePlayer = ForbiddingManse.GetOrCreateCharacter(matchStartArgs.BluePlayer);
+            var redPlayer = ForbiddingManse.GetOrCreateCharacter(matchStartArgs.RedPlayer);
 
             Log.Information("Exhibition Match Start: [{BetSymbol}] {RedPlayer}({RedStats}) vs {BluePlayer}({BlueStats}). Betting {SaltAmount:N0}$ on {BetPlayer}.",
                 betSymbol,
@@ -428,7 +427,7 @@ namespace RealSalt
                 balanceSymbol,
                 matchEndArgs.SaltBalanceChange);
 
-            _forbiddingManse.RegisterMatchResult(matchEndArgs, MatchType.Exhibition);
+            ForbiddingManse.RegisterMatchResult(matchEndArgs, MatchType.Exhibition);
         }
 
         private static void SaltyBetConsoleOnTournamentEnded(object sender, EventArgs eventArgs)

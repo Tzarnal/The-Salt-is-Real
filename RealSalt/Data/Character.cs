@@ -7,8 +7,8 @@ namespace RealSalt.Data
         public int CharacterId { get; set; }
         public string Name { get; set; }
 
-        public int TotalWins => Program._forbiddingManse.GetWins(this);
-        public int TotalLosses => Program._forbiddingManse.GetLosses(this);
+        public int TotalWins => Program.ForbiddingManse.GetWins(this);
+        public int TotalLosses => Program.ForbiddingManse.GetLosses(this);
 
         public int Matches => TotalWins + TotalLosses;
         public double WinPercent
