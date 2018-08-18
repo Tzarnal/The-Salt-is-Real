@@ -59,7 +59,7 @@ namespace RealSalt.BettingEngine
                 betCharacter = SaltyConsole.Players.RedPlayer;
 
                 betSalt = BaseBetAmount(redPlayerProfit, matchArgs.Salt);
-                betSalt += AdditionalBetAmount(redPlayerProfit, betSalt);
+                //betSalt += AdditionalBetAmount(redPlayerProfit, betSalt);
 
                 Log.Verbose("Better - Profit: {RedPlayer} expected profit {RedPlayerProfit:N5} >>> {Blueplayer} expected profit {BluePlayerProfit:N5}.",
                     redPlayer.Name,
@@ -72,7 +72,7 @@ namespace RealSalt.BettingEngine
                 betCharacter = SaltyConsole.Players.BluePlayer;
 
                 betSalt = BaseBetAmount(bluePlayerProfit, matchArgs.Salt);
-                betSalt += AdditionalBetAmount(bluePlayerProfit, betSalt);
+                //betSalt += AdditionalBetAmount(bluePlayerProfit, betSalt);
 
                 Log.Verbose("Better - Profit: {RedPlayer} expected profit {RedPlayerProfit:N5} <<< {Blueplayer} expected profit {BluePlayerProfit:N5}.",
                     redPlayer.Name,
