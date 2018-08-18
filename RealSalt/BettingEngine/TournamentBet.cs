@@ -92,7 +92,7 @@ namespace RealSalt.BettingEngine
                     betCharacter = SaltyConsole.Players.BluePlayer;
                 }
 
-                Log.Verbose("Betting[WRAT]: No reliable stats on either character. Randomly picked {player}.",
+                Log.Verbose("Better - Winrate Tournament: No reliable stats on either character. Randomly picked {player}.",
                     betCharacter.ToString());
             }
 
