@@ -21,6 +21,7 @@ namespace RealSalt
 
         private static IBettingEngine _bettingEngine;
         private static IBettingEngine _tournamentBettingEngine;
+        private static IBettingEngine _exibhitionBettingEngine;
         private static IBettingEngine _bettingEngineBackup;
         
         public static ForbiddingManse ForbiddingManse;
@@ -79,6 +80,7 @@ namespace RealSalt
 
             _bettingEngine = new ExpectedProfitBet();
             _tournamentBettingEngine = new TournamentBet(ForbiddingManse);
+            _exibhitionBettingEngine = new ExpectedProfitBet(exhibitionMatches: true);
             _bettingEngineBackup = new RandomBet();
 
             try
@@ -343,7 +345,7 @@ namespace RealSalt
             }
 
             //Regular betting engine
-            var betPlan = _bettingEngine.PlaceBet(matchStartArgs);
+            var betPlan = _exibhitionBettingEngine.PlaceBet(matchStartArgs);
 
             //In case no bet was placed, fallback to random
             if (betPlan.Character == SaltyConsole.Players.Unknown)
@@ -351,7 +353,7 @@ namespace RealSalt
                 betPlan = _bettingEngineBackup.PlaceBet(matchStartArgs);
             }
 
-            //Exhibitions are garbage, only bet half of normal
+            //Exhibitions are garbage, only bet half of adviced
             betPlan.Salt = (int) (betPlan.Salt * 0.5);
 
             _saltyBetConsole.PlaceBet(betPlan.Character, betPlan.Salt);
