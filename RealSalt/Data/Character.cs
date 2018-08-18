@@ -21,15 +21,6 @@ namespace RealSalt.Data
         }
 
         public bool IsReliableData => Matches > 4;
-
-        public new string ToString()
-        {
-            if (Matches == 0)
-            {
-                return $"0% {TotalWins}W-{TotalLosses}L";
-            }
-
-            return $"{WinPercent}% {TotalWins}W-{TotalLosses}L";
-        }
     }
+    
 }

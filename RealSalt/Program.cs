@@ -171,15 +171,10 @@ namespace RealSalt
 
             var betCharacterName = betCharacter == SaltyConsole.Players.BluePlayer ? matchStartArgs.BluePlayer : matchStartArgs.RedPlayer;
 
-            var bluePlayer = ForbiddingManse.GetOrCreateCharacter(matchStartArgs.BluePlayer);
-            var redPlayer = ForbiddingManse.GetOrCreateCharacter(matchStartArgs.RedPlayer);
-            
-            Log.Information("Match Start: [{BetSymbol}] {RedPlayer}({RedStats}) vs {BluePlayer}({BlueStats}). Betting {SaltAmount:N0}$ on {BetPlayer}.",
+            Log.Information("Match Start: [{BetSymbol}] {RedPlayer} vs {BluePlayer}. Betting {SaltAmount:N0}$ on {BetPlayer}.",
                 betSymbol,
                 matchStartArgs.RedPlayer,
-                redPlayer.ToString(),
                 matchStartArgs.BluePlayer,
-                bluePlayer.ToString(),
                 betSalt,
                 betCharacterName);
         }
@@ -225,16 +220,10 @@ namespace RealSalt
 
             var betCharacterName = betCharacter == SaltyConsole.Players.BluePlayer ? matchStartArgs.BluePlayer : matchStartArgs.RedPlayer;
 
-            var bluePlayer = ForbiddingManse.GetOrCreateCharacter(matchStartArgs.BluePlayer);
-            var redPlayer = ForbiddingManse.GetOrCreateCharacter(matchStartArgs.RedPlayer);
-
-
-            Log.Information("Tournament Match Start: [{BetSymbol}] {RedPlayer}({RedStats}) vs {BluePlayer}({BlueStats}). Betting {SaltAmount:N0}$ on {BetPlayer}.",
+            Log.Information("Tournament Match Start: [{BetSymbol}] {RedPlayer} vs {BluePlayer}. Betting {SaltAmount:N0}$ on {BetPlayer}.",
                 betSymbol,
-                matchStartArgs.RedPlayer,
-                redPlayer.ToString(),
+                matchStartArgs.RedPlayer,            
                 matchStartArgs.BluePlayer,
-                bluePlayer.ToString(),
                 betSalt,
                 betCharacterName);
         }
@@ -370,16 +359,11 @@ namespace RealSalt
             _saltyBetConsole.PlaceBet(betCharacter, betSalt);
 
             var betCharacterName = betCharacter == SaltyConsole.Players.BluePlayer ? matchStartArgs.BluePlayer : matchStartArgs.RedPlayer;
-
-            var bluePlayer = ForbiddingManse.GetOrCreateCharacter(matchStartArgs.BluePlayer);
-            var redPlayer = ForbiddingManse.GetOrCreateCharacter(matchStartArgs.RedPlayer);
-
-            Log.Information("Exhibition Match Start: [{BetSymbol}] {RedPlayer}({RedStats}) vs {BluePlayer}({BlueStats}). Betting {SaltAmount:N0}$ on {BetPlayer}.",
+            
+            Log.Information("Exhibition Match Start: [{BetSymbol}] {RedPlayer} vs {BluePlayer}. Betting {SaltAmount:N0}$ on {BetPlayer}.",
                 betSymbol,
                 matchStartArgs.RedPlayer,
-                redPlayer.ToString(),
                 matchStartArgs.BluePlayer,
-                bluePlayer.ToString(),
                 betSalt,
                 betCharacterName);
         }
