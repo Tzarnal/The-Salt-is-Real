@@ -48,16 +48,27 @@ namespace RealSalt
         }
         #endregion
 
-        static void Main()
+        static void Main(string[] args)
         {
             //Set ctrl-c handler
             SetConsoleCtrlHandler(ConsoleCtrlCheck, true);
 
-            Log.Logger = new LoggerConfiguration()
-                .MinimumLevel.Debug()                
-                .WriteTo.Console()
-                .CreateLogger();
 
+            if (args.Contains("--verbose") || args.Contains("-v"))
+            {
+                Log.Logger = new LoggerConfiguration()
+                    .MinimumLevel.Verbose()
+                    .WriteTo.Console()
+                    .CreateLogger();
+            }
+            else
+            {
+                Log.Logger = new LoggerConfiguration()
+                    .MinimumLevel.Information()
+                    .WriteTo.Console()
+                    .CreateLogger();
+            }
+            
             LoadConfig();
 
             _saltyBetConsole = new SaltyConsole();
@@ -66,7 +77,7 @@ namespace RealSalt
             _sessionResults = new SessionResults();
             _tournamentResults = new SessionResults();
 
-            _bettingEngine = new WinRateAdjusted(ForbiddingManse);
+            _bettingEngine = new WinRateAdjusted();
             _tournamentBettingEngine = new TournamentBet(ForbiddingManse);
             _bettingEngineBackup = new RandomBet();
 
@@ -157,25 +168,20 @@ namespace RealSalt
             var betPlan = _bettingEngine.PlaceBet(matchStartArgs);
                         
             //In case no bet was placed, fallback to random
-            if (betPlan.Item3 == SaltyConsole.Players.Unknown)
+            if (betPlan.Character == SaltyConsole.Players.Unknown)
             {
                 betPlan = _bettingEngineBackup.PlaceBet(matchStartArgs);
             }
-
-            var betCharacter = betPlan.Item3;
-            var betSalt = betPlan.Item2;
-            var betSymbol = betPlan.Item1;
-
             //Place and report bet.
-            _saltyBetConsole.PlaceBet(betCharacter,betSalt);
+            _saltyBetConsole.PlaceBet(betPlan.Character, betPlan.Salt);
 
-            var betCharacterName = betCharacter == SaltyConsole.Players.BluePlayer ? matchStartArgs.BluePlayer : matchStartArgs.RedPlayer;
+            var betCharacterName = betPlan.Character == SaltyConsole.Players.BluePlayer ? matchStartArgs.BluePlayer : matchStartArgs.RedPlayer;
 
             Log.Information("Match Start: [{BetSymbol}] {RedPlayer} vs {BluePlayer}. Betting {SaltAmount:N0}$ on {BetPlayer}.",
-                betSymbol,
+                betPlan.Symbol,
                 matchStartArgs.RedPlayer,
                 matchStartArgs.BluePlayer,
-                betSalt,
+                betPlan.Salt,
                 betCharacterName);
         }
 
@@ -206,25 +212,21 @@ namespace RealSalt
             var betPlan = _tournamentBettingEngine.PlaceBet(matchStartArgs);
 
             //In case no bet was placed, fallback to random
-            if (betPlan.Item3 == SaltyConsole.Players.Unknown)
+            if (betPlan.Character == SaltyConsole.Players.Unknown)
             {
                 betPlan = _bettingEngineBackup.PlaceBet(matchStartArgs);
             }
 
-            var betCharacter = betPlan.Item3;
-            var betSalt = betPlan.Item2;
-            var betSymbol = betPlan.Item1;
-
             //Place and report bet.
-            _saltyBetConsole.PlaceBet(betCharacter, betSalt);
+            _saltyBetConsole.PlaceBet(betPlan.Character, betPlan.Salt);
 
-            var betCharacterName = betCharacter == SaltyConsole.Players.BluePlayer ? matchStartArgs.BluePlayer : matchStartArgs.RedPlayer;
+            var betCharacterName = betPlan.Character == SaltyConsole.Players.BluePlayer ? matchStartArgs.BluePlayer : matchStartArgs.RedPlayer;
 
             Log.Information("Tournament Match Start: [{BetSymbol}] {RedPlayer} vs {BluePlayer}. Betting {SaltAmount:N0}$ on {BetPlayer}.",
-                betSymbol,
+                betPlan.Symbol,
                 matchStartArgs.RedPlayer,            
                 matchStartArgs.BluePlayer,
-                betSalt,
+                betPlan.Salt,
                 betCharacterName);
         }
         
@@ -344,27 +346,23 @@ namespace RealSalt
             var betPlan = _bettingEngine.PlaceBet(matchStartArgs);
 
             //In case no bet was placed, fallback to random
-            if (betPlan.Item3 == SaltyConsole.Players.Unknown)
+            if (betPlan.Character == SaltyConsole.Players.Unknown)
             {
                 betPlan = _bettingEngineBackup.PlaceBet(matchStartArgs);
             }
 
-            var betCharacter = betPlan.Item3;
-            var betSalt = betPlan.Item2;
-            var betSymbol = betPlan.Item1;
-
             //Exhibitions are garbage, only bet half of normal
-            betSalt = (int) (betSalt * 0.5);
+            betPlan.Salt = (int) (betPlan.Salt * 0.5);
 
-            _saltyBetConsole.PlaceBet(betCharacter, betSalt);
+            _saltyBetConsole.PlaceBet(betPlan.Character, betPlan.Salt);
 
-            var betCharacterName = betCharacter == SaltyConsole.Players.BluePlayer ? matchStartArgs.BluePlayer : matchStartArgs.RedPlayer;
+            var betCharacterName = betPlan.Character == SaltyConsole.Players.BluePlayer ? matchStartArgs.BluePlayer : matchStartArgs.RedPlayer;
             
             Log.Information("Exhibition Match Start: [{BetSymbol}] {RedPlayer} vs {BluePlayer}. Betting {SaltAmount:N0}$ on {BetPlayer}.",
-                betSymbol,
+                betPlan.Symbol,
                 matchStartArgs.RedPlayer,
                 matchStartArgs.BluePlayer,
-                betSalt,
+                betPlan.Salt,
                 betCharacterName);
         }
 

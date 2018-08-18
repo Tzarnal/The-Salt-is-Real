@@ -2,6 +2,7 @@
 using ChromiumConsole;
 using ChromiumConsole.EventArguments;
 using RealSalt.Data;
+using Serilog;
 
 namespace RealSalt.BettingEngine
 {
@@ -16,7 +17,7 @@ namespace RealSalt.BettingEngine
             _genie = new Random();
         }
 
-        public Tuple<string, int, SaltyConsole.Players> PlaceBet(MatchStartEventArgs matchArgs)
+        public BettingPlan PlaceBet(MatchStartEventArgs matchArgs)
         {
             string betSymbol;
 
@@ -37,7 +38,14 @@ namespace RealSalt.BettingEngine
                 {
                     betCharacter = SaltyConsole.Players.BluePlayer;
                 }
+
                 betSymbol = "=";
+
+                Log.Verbose("Better - Winrate Tournament: {RedPlayer} Winrate {RedWinrate}%. {BluePlayer} Winrate {BlueWinrate}%.",
+                    redPlayer.Name,
+                    redPlayer.WinPercent,
+                    bluePlayer.Name,
+                    bluePlayer.WinPercent);
             }
             else if (redPlayer.IsReliableData)
             {
@@ -49,7 +57,13 @@ namespace RealSalt.BettingEngine
                 {
                     betCharacter = SaltyConsole.Players.BluePlayer;
                 }
+
                 betSymbol = "-";
+
+                Log.Verbose("Better - Winrate Tournament: {RedPlayer} Winrate {RedWinrate}. {BluePlayer} Winrate is unreliable.",
+                    redPlayer.Name,
+                    redPlayer.WinPercent,
+                    bluePlayer.Name);
             }
             else if (bluePlayer.IsReliableData)
             {
@@ -61,7 +75,13 @@ namespace RealSalt.BettingEngine
                 {
                     betCharacter = SaltyConsole.Players.RedPlayer;
                 }
+
                 betSymbol = "-";
+
+                Log.Verbose("Better - Winrate Tournament: {RedPlayer} Winrate is unreliable. {Blueplayer} Winrate is {BlueWinrate}.",
+                    redPlayer.Name,
+                    bluePlayer.Name,
+                    bluePlayer.WinPercent);
             }
             else
             {
@@ -71,9 +91,17 @@ namespace RealSalt.BettingEngine
                 {
                     betCharacter = SaltyConsole.Players.BluePlayer;
                 }
+
+                Log.Verbose("Betting[WRAT]: No reliable stats on either character. Randomly picked {player}.",
+                    betCharacter.ToString());
             }
 
-            return new Tuple<string, int, SaltyConsole.Players>(betSymbol, betSalt, betCharacter);
+            return new BettingPlan
+            {
+                Symbol = betSymbol,
+                Character = betCharacter,
+                Salt = betSalt
+            };
         }
 
         private bool IsHeads()

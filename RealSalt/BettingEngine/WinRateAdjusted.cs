@@ -2,6 +2,7 @@
 using ChromiumConsole;
 using ChromiumConsole.EventArguments;
 using RealSalt.Data;
+using Serilog;
 
 namespace RealSalt.BettingEngine
 {
@@ -9,12 +10,12 @@ namespace RealSalt.BettingEngine
     {
         private ForbiddingManse _forbiddingManse;
 
-        public WinRateAdjusted(ForbiddingManse forbiddingManse)
+        public WinRateAdjusted()
         {
-            _forbiddingManse = forbiddingManse;
+            _forbiddingManse = Program.ForbiddingManse;
         }
 
-        public Tuple<string, int, SaltyConsole.Players> PlaceBet(MatchStartEventArgs matchArgs)
+        public BettingPlan PlaceBet(MatchStartEventArgs matchArgs)
         {            
             var betSymbol = " ";
          
@@ -37,7 +38,14 @@ namespace RealSalt.BettingEngine
                     betCharacter = SaltyConsole.Players.BluePlayer;                    
                     betSalt += AdditionalBetAmount(bluePlayer, betSalt);
                 }
+
                 betSymbol = "=";
+
+                Log.Verbose("Better - Winrate: {RedPlayer} Winrate {RedWinrate}%. {BluePlayer} Winrate {BlueWinrate}%.",
+                    redPlayer.Name,
+                    redPlayer.WinPercent,
+                    bluePlayer.Name,
+                    bluePlayer.WinPercent);
             }
             else if (redPlayer.IsReliableData)
             {
@@ -50,7 +58,14 @@ namespace RealSalt.BettingEngine
                 {
                     betCharacter = SaltyConsole.Players.BluePlayer;
                 }
+
                 betSymbol = "-";
+
+                Log.Verbose("Better - Winrate: {RedPlayer} Winrate {RedWinrate}. {BluePlayer} Winrate is unreliable.",
+                    redPlayer.Name,
+                    redPlayer.WinPercent,
+                    bluePlayer.Name);
+                
             }
             else if (bluePlayer.IsReliableData)
             {
@@ -63,10 +78,21 @@ namespace RealSalt.BettingEngine
                 {
                     betCharacter = SaltyConsole.Players.RedPlayer;
                 }
-                betSymbol = "-";
-            } 
 
-            return new Tuple<string, int, SaltyConsole.Players>(betSymbol, betSalt, betCharacter);
+                betSymbol = "-";
+
+                Log.Verbose("Better - Winrate: {RedPlayer} Winrate is unreliable. {Blueplayer} Winrate is {BlueWinrate}.",
+                    redPlayer.Name,
+                    bluePlayer.Name,
+                    bluePlayer.WinPercent);
+            }
+
+            return new BettingPlan
+            {
+                Symbol = betSymbol,
+                Character = betCharacter,
+                Salt = betSalt
+            };
         }
 
         private int BaseBetAmount(int salt)
@@ -77,14 +103,12 @@ namespace RealSalt.BettingEngine
             return (int)Math.Pow(10, targetDigits);
         }
 
-
         private int AdditionalBetAmount(Character player,int startingAmount)
         {
             if (player.WinPercent < 51 || player.Matches == 0)
             {
                 return 0;
             }
-
 
             var modifier = (player.WinPercent - 50) / 10;
 

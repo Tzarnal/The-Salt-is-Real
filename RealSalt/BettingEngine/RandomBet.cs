@@ -1,6 +1,7 @@
 ﻿using System;
 using ChromiumConsole;
 using ChromiumConsole.EventArguments;
+using Serilog;
 
 namespace RealSalt.BettingEngine
 {
@@ -13,7 +14,7 @@ namespace RealSalt.BettingEngine
             _genie = new Random();
         }
 
-        public Tuple<string, int, SaltyConsole.Players> PlaceBet(MatchStartEventArgs matchArgs)
+        public BettingPlan PlaceBet(MatchStartEventArgs matchArgs)
         {
             var betAmount = BaseBetAmount(matchArgs.Salt);
             var player = SaltyConsole.Players.RedPlayer;
@@ -23,7 +24,16 @@ namespace RealSalt.BettingEngine
                 player = SaltyConsole.Players.BluePlayer;
             }
 
-            return new Tuple<string, int, SaltyConsole.Players>("~", betAmount, player);
+            Log.Verbose("Better - Random: Randomly picked {player}.",
+                player.ToString());
+
+            return new BettingPlan
+            {
+                Symbol = "~",
+                Character = player,
+                Salt = betAmount
+            };
+           
         }
 
         private  int BaseBetAmount(int salt)

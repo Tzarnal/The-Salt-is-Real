@@ -1,12 +1,17 @@
-﻿using System;
-using ChromiumConsole;
+﻿using ChromiumConsole;
 using ChromiumConsole.EventArguments;
-
 
 namespace RealSalt.BettingEngine
 {
+    public class BettingPlan
+    {
+        public string Symbol;
+        public int Salt;
+        public SaltyConsole.Players Character;
+    }
+
     public interface IBettingEngine
     {
-        Tuple<string, int, SaltyConsole.Players > PlaceBet(MatchStartEventArgs matchArgs);
+        BettingPlan PlaceBet(MatchStartEventArgs matchArgs);
     }
 }
