@@ -276,7 +276,14 @@ namespace RealSalt
                 balanceSymbol,
                 matchEndArgs.SaltBalanceChange);
 
-            ForbiddingManse.RegisterMatchResult(matchEndArgs, MatchType.MatchMaking);
+            try
+            {
+                ForbiddingManse.RegisterMatchResult(matchEndArgs, MatchType.MatchMaking);
+            }
+            catch
+            {
+                Log.Debug("Could not record Tournament match result due to EF Exception");
+            }            
         }
 
         private static void ConsoleOnTournamentMatchEnded(object sender, EventArgs eventArgs)
@@ -322,8 +329,14 @@ namespace RealSalt
                 balanceSymbol,
                 matchEndArgs.SaltBalanceChange);
 
-            ForbiddingManse.RegisterMatchResult(matchEndArgs, MatchType.Tournament);
-
+            try
+            {
+                ForbiddingManse.RegisterMatchResult(matchEndArgs, MatchType.Tournament);
+            }
+            catch
+            {
+                Log.Debug("Could not record Tournament match result due to EF Exception");
+            }            
         }
 
         private static void SaltyBetConsoleOnExhibitionMatchStart(object sender, EventArgs eventArgs)
@@ -411,7 +424,14 @@ namespace RealSalt
                 balanceSymbol,
                 matchEndArgs.SaltBalanceChange);
 
-            ForbiddingManse.RegisterMatchResult(matchEndArgs, MatchType.Exhibition);
+            try
+            {
+                ForbiddingManse.RegisterMatchResult(matchEndArgs, MatchType.Exhibition);
+            }
+            catch
+            {
+                Log.Debug("Could not record Tournament match result due to EF Exception");
+            }            
         }
 
         private static void SaltyBetConsoleOnTournamentEnded(object sender, EventArgs eventArgs)
