@@ -31,8 +31,8 @@ namespace RealSalt.BettingEngine
             var bluePlayer = _forbiddingManse.GetOrCreateCharacter(matchArgs.BluePlayer);
             var redPlayer = _forbiddingManse.GetOrCreateCharacter(matchArgs.RedPlayer);
 
-            var bluePlayerProfit = GetExpectedProfit(bluePlayer);
-            var redPlayerProfit = GetExpectedProfit(redPlayer);
+            var (bluePlayerProfit, bluePlayerMatchcount) = GetProfitAndMatchcount(bluePlayer);
+            var (redPlayerProfit, redPlayerMatchcount) = GetProfitAndMatchcount(redPlayer);
 
             if (redPlayerProfit.Equals(bluePlayerProfit))
             {
@@ -57,27 +57,37 @@ namespace RealSalt.BettingEngine
             if (redPlayerProfit > bluePlayerProfit)
             {
                 betCharacter = SaltyConsole.Players.RedPlayer;
-
                 betSalt = BaseBetAmount(redPlayerProfit, matchArgs.Salt);
-                //betSalt += AdditionalBetAmount(redPlayerProfit, betSalt);
 
-                Log.Verbose("Better - Profit: {RedPlayer} expected profit {RedPlayerProfit:N5} >>> {Blueplayer} expected profit {BluePlayerProfit:N5}.",
+                if (redPlayerMatchcount > 3 && bluePlayerMatchcount > 3)
+                {
+                    betSalt += AdditionalBetAmount(redPlayerProfit, betSalt);
+                }
+                
+                Log.Verbose("Better - Profit: {RedPlayer} odds {RedPlayerCertainty}{RedPlayerProfit:N4} >>> {Blueplayer} odds {BluePlayerCertainty}{BluePlayerProfit:N4}.",
                     redPlayer.Name,
+                    redPlayerMatchcount <= 3 ? "~" : "",
                     redPlayerProfit,
                     bluePlayer.Name,
+                    bluePlayerMatchcount <= 3 ? "~" : "",
                     bluePlayerProfit);
             }
             else
             {
                 betCharacter = SaltyConsole.Players.BluePlayer;
-
                 betSalt = BaseBetAmount(bluePlayerProfit, matchArgs.Salt);
-                //betSalt += AdditionalBetAmount(bluePlayerProfit, betSalt);
 
-                Log.Verbose("Better - Profit: {RedPlayer} expected profit {RedPlayerProfit:N5} <<< {Blueplayer} expected profit {BluePlayerProfit:N5}.",
+                if (redPlayerMatchcount > 3 && bluePlayerMatchcount > 3)
+                {
+                    betSalt += AdditionalBetAmount(bluePlayerProfit, betSalt);
+                }
+                
+                Log.Verbose("Better - Profit: {RedPlayer} odds {RedPlayerCertainty}{RedPlayerProfit:N4} <<< {Blueplayer} odds {BluePlayerCertainty}{BluePlayerProfit:N4}.",
                     redPlayer.Name,
+                    redPlayerMatchcount <= 3 ? "~" : "",
                     redPlayerProfit,
                     bluePlayer.Name,
+                    bluePlayerMatchcount <= 3 ? "~" : "",
                     bluePlayerProfit);
             }
 
@@ -89,23 +99,20 @@ namespace RealSalt.BettingEngine
             };
         }
 
-        private double GetExpectedProfit(Character character)
+        private (double,int) GetProfitAndMatchcount(Character character)
         {
-            double expectedProfit = GetNumberOfLosses(character) * -1;
+            int losses = GetNumberOfLosses(character);
+            double expectedProfit = losses * -1;
+
 
             var winningMatches = GetWinningMatches(character);
-
-            if(winningMatches.Count == 0)
-            {
-                return 0;
-            }
 
             foreach (var winningMatch in winningMatches)
             {
                 expectedProfit += GetMatchWinOdds(winningMatch);
             }
 
-            return expectedProfit;
+            return (expectedProfit,losses + winningMatches.Count);
         }
 
         public double GetMatchWinOdds(MatchRecord match)
@@ -158,7 +165,6 @@ namespace RealSalt.BettingEngine
                 //Unlikely scenario that both have terrible returns but we're better on the least bad
                 betAmount = betAmount * expectedProfit;
             }
-
             
             return (int) betAmount;
         }
