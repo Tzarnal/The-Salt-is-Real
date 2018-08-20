@@ -167,8 +167,23 @@ namespace RealSalt
             }
 
             //Regular betting engine
-            var betPlan = _bettingEngine.PlaceBet(matchStartArgs);
-                        
+            BettingPlan betPlan;
+
+            try
+            {
+                betPlan =  _bettingEngine.PlaceBet(matchStartArgs);
+            }
+            catch
+            {
+                Log.Debug("Could not create bet due to EF Exception, defaulting to random");
+                betPlan = new BettingPlan
+                {
+                    Character = SaltyConsole.Players.Unknown,
+                    Salt = 0,
+                    Symbol = "",
+                };
+            }
+
             //In case no bet was placed, fallback to random
             if (betPlan.Character == SaltyConsole.Players.Unknown)
             {
@@ -211,7 +226,22 @@ namespace RealSalt
             }
 
             //For Tournaments
-            var betPlan = _tournamentBettingEngine.PlaceBet(matchStartArgs);
+            BettingPlan betPlan;
+
+            try
+            {
+                betPlan = _tournamentBettingEngine.PlaceBet(matchStartArgs);
+            }
+            catch
+            {
+                Log.Debug("Could not create tournament bet due to EF Exception, defaulting to random");
+                betPlan = new BettingPlan
+                {
+                    Character = SaltyConsole.Players.Unknown,
+                    Salt = 0,
+                    Symbol = "",
+                };
+            }
 
             //In case no bet was placed, fallback to random
             if (betPlan.Character == SaltyConsole.Players.Unknown)
@@ -282,7 +312,7 @@ namespace RealSalt
             }
             catch
             {
-                Log.Debug("Could not record Tournament match result due to EF Exception");
+                Log.Debug("Could not record match result due to EF Exception");
             }            
         }
 
@@ -356,9 +386,23 @@ namespace RealSalt
             {
                 _sessionResults.StartingSalt = matchStartArgs.Salt;
             }
+            
+            BettingPlan betPlan;
 
-            //Regular betting engine
-            var betPlan = _exibhitionBettingEngine.PlaceBet(matchStartArgs);
+            try
+            {
+                betPlan = _exibhitionBettingEngine.PlaceBet(matchStartArgs);
+            }
+            catch
+            {
+                Log.Debug("Could not create exhibition bet due to EF Exception, defaulting to random");
+                betPlan = new BettingPlan
+                {
+                    Character = SaltyConsole.Players.Unknown,
+                    Salt = 0,
+                    Symbol = "",
+                };
+            }
 
             //In case no bet was placed, fallback to random
             if (betPlan.Character == SaltyConsole.Players.Unknown)
@@ -430,7 +474,7 @@ namespace RealSalt
             }
             catch
             {
-                Log.Debug("Could not record Tournament match result due to EF Exception");
+                Log.Debug("Could not record Exhibition match result due to EF Exception");
             }            
         }
 
