@@ -11,7 +11,7 @@ namespace RealSalt.BettingEngine
     class ExpectedProfitBet : IBettingEngine
     {
         private ForbiddingManse _forbiddingManse;
-
+        private readonly int _reliableMatchCount = 5;
         private bool _exhibitionMatches;
 
         public ExpectedProfitBet(bool exhibitionMatches = false)
@@ -59,17 +59,17 @@ namespace RealSalt.BettingEngine
                 betCharacter = SaltyConsole.Players.RedPlayer;
                 betSalt = BaseBetAmount(redPlayerProfit, matchArgs.Salt);
 
-                if (redPlayerMatchcount > 3 && bluePlayerMatchcount > 3)
+                if (redPlayerMatchcount > _reliableMatchCount && bluePlayerMatchcount > _reliableMatchCount)
                 {
                     betSalt += AdditionalBetAmount(redPlayerProfit, betSalt);
                 }
                 
                 Log.Verbose("Better - Profit: {RedPlayer} odds {RedPlayerCertainty}{RedPlayerProfit:N4} >>> {Blueplayer} odds {BluePlayerCertainty}{BluePlayerProfit:N4}.",
                     redPlayer.Name,
-                    redPlayerMatchcount <= 3 ? "~" : "",
+                    redPlayerMatchcount <= _reliableMatchCount ? "~" : "",
                     redPlayerProfit,
                     bluePlayer.Name,
-                    bluePlayerMatchcount <= 3 ? "~" : "",
+                    bluePlayerMatchcount <= _reliableMatchCount ? "~" : "",
                     bluePlayerProfit);
             }
             else
@@ -77,17 +77,17 @@ namespace RealSalt.BettingEngine
                 betCharacter = SaltyConsole.Players.BluePlayer;
                 betSalt = BaseBetAmount(bluePlayerProfit, matchArgs.Salt);
 
-                if (redPlayerMatchcount > 3 && bluePlayerMatchcount > 3)
+                if (redPlayerMatchcount > _reliableMatchCount && bluePlayerMatchcount > _reliableMatchCount)
                 {
                     betSalt += AdditionalBetAmount(bluePlayerProfit, betSalt);
                 }
                 
                 Log.Verbose("Better - Profit: {RedPlayer} odds {RedPlayerCertainty}{RedPlayerProfit:N4} <<< {Blueplayer} odds {BluePlayerCertainty}{BluePlayerProfit:N4}.",
                     redPlayer.Name,
-                    redPlayerMatchcount <= 3 ? "~" : "",
+                    redPlayerMatchcount <= _reliableMatchCount ? "~" : "",
                     redPlayerProfit,
                     bluePlayer.Name,
-                    bluePlayerMatchcount <= 3 ? "~" : "",
+                    bluePlayerMatchcount <= _reliableMatchCount ? "~" : "",
                     bluePlayerProfit);
             }
 
@@ -166,6 +166,7 @@ namespace RealSalt.BettingEngine
                 betAmount = betAmount * expectedProfit;
             }
 
+            //Don't bet negative amounts.
             if (betAmount < 0)
             {
                 betAmount = betAmount * -1;
