@@ -165,7 +165,12 @@ namespace RealSalt.BettingEngine
                 //Unlikely scenario that both have terrible returns but we're better on the least bad
                 betAmount = betAmount * expectedProfit;
             }
-            
+
+            if (betAmount < 0)
+            {
+                betAmount = betAmount * -1;
+            }
+
             return (int) betAmount;
         }
 
