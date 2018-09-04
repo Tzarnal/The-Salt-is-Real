@@ -186,13 +186,25 @@ namespace RealSalt.BettingEngine
             //adjust by one since we are adding to the base bet not modifying the base bet.
             expectedProfit -= 1;
 
-            //Don't bet more than 10 times the amount
-            if (expectedProfit > 9)
+            //map our linear expected profit to a log multiplier.
+            var scaledMultiplier = Scale(expectedProfit);
+
+            return (int)(startingAmount * scaledMultiplier);
+        }
+
+        private double Scale(double value, double maxInputValue = 250, double maxOutputValue = 9)
+        {
+            if (value <= 1)
             {
-                expectedProfit = 9;
+                return 0; // log is undefined for 0, log(1) = 0
             }
 
-            return (int)(startingAmount * expectedProfit);
+            if (value > maxInputValue)
+            {
+                value = maxInputValue;
+            }
+                            
+            return maxOutputValue * Math.Log(value) / Math.Log(maxInputValue);
         }
     }
 }
