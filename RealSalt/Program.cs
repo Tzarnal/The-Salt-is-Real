@@ -26,7 +26,7 @@ namespace RealSalt
         
         public static ForbiddingManse ForbiddingManse;
 
-        #region MyRegion
+        #region Ctrl-C Handler
         // Declare the SetConsoleCtrlHandler function
         // as external and receiving a delegate.
 
