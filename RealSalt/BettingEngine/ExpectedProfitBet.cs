@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using ChromiumConsole;
@@ -192,7 +192,7 @@ namespace RealSalt.BettingEngine
             return (int)(startingAmount * scaledMultiplier);
         }
 
-        private double Scale(double value, double maxInputValue = 250, double maxOutputValue = 9)
+        private double Scale(double value, double maxInputValue = 100, double maxOutputValue = 4)
         {
             if (value <= 1)
             {
