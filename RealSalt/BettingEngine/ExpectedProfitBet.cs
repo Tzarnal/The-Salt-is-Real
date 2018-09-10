@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using ChromiumConsole;
@@ -112,7 +112,11 @@ namespace RealSalt.BettingEngine
                 expectedProfit += GetMatchWinOdds(winningMatch);
             }
 
-            return (expectedProfit,losses + winningMatches.Count);
+            var totalMatches = losses + winningMatches.Count;
+
+            expectedProfit = expectedProfit / totalMatches;
+
+            return (expectedProfit, totalMatches);
         }
 
         public double GetMatchWinOdds(MatchRecord match)
